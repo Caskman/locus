@@ -35,3 +35,4 @@ This document outlines the system requirements using the EARS (Easy Approach to 
 24. The system shall locally cache map data to allow visualization of previously viewed areas without network connectivity.
 25. When historical data is retrieved from remote storage, the system shall cache the data locally to prevent redundant downloads.
 26. When displaying a track, the system shall display summary statistics including total distance and duration.
+27. When rendering the track, the system shall visually highlight segments characterized by rapid acceleration or deceleration to identify potential safety events.
