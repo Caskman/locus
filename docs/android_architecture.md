@@ -10,12 +10,12 @@ The Android application acts as both the data collector and the infrastructure c
 ## 2. Tracker Service (The Engine)
 *   **Role:** Always-on data collection.
 *   **Component:** `ForegroundService` with `PARTIAL_WAKE_LOCK`.
-*   **Action:** Captures GPS (1Hz), buffers to local Room DB.
-*   **Safety:** Stops if battery < 10%.
+*   **Action:** Captures GPS (1Hz Normal, 10s < 10%, 60s < 3%), buffers to local Room DB.
+*   **Safety:** Reduces sample rate and pauses uploads when battery is low. Resumes > 15%.
 
 ## 3. Sync Worker (The Uploader)
 *   **Role:** Reliable data transport.
-*   **Trigger:** Periodic (e.g., every 15 mins) via WorkManager.
+*   **Trigger:** Periodic (e.g., every 15 mins) via WorkManager. Paused if battery < 10%.
 *   **Action:**
     *   Query oldest points from Room DB.
     *   Compress to Gzip.
