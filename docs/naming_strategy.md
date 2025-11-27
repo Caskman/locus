@@ -26,7 +26,12 @@ The S3 bucket name is **auto-generated** by CloudFormation to guarantee uniquene
 *   **Format:** `locus-<DeviceName>-<RandomSuffix>`
 *   **Example:** `locus-pixel7-j4k2m9zp`
 *   **Mechanism:** The Android app does *not* choose the bucket name. It passes the `DeviceName` as a parameter to the CloudFormation template. The template uses `Fn::Join` with a pseudo-parameter (like `AWS::StackId` or a randomization string) to construct the final bucket name.
-*   **Discovery:** After provisioning, the app queries the Stack Outputs to discover the actual physical name of the bucket (`locus-pixel7-j4k2m9zp`) and saves it to local preferences.
+
+### 4. Discovery Strategy (Important)
+For **System Recovery**, the app needs to find these buckets *without* knowing the random suffix.
+*   **Method:** The app lists all buckets in the account and filters for those starting with `locus-`.
+*   **Why:** This is faster and cheaper (1 API call) than querying CloudFormation Stacks or checking Tags on every bucket.
+*   **Constraint:** Users must not manually rename their buckets to something that doesn't start with `locus-`, or the app will not find them.
 
 ## Multi-Tenancy (One Account, Many Devices)
 This strategy natively supports multiple devices on a single AWS account.
