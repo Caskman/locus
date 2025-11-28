@@ -13,3 +13,4 @@
 ## 2.3. Data Format
 *   **Interoperability:** Data must be stored in a standard, open, text-based format (NDJSON) to ensure future readability.
 *   **Efficiency:** Data bundles must be compressed (e.g., Gzip) before transmission to minimize network usage and storage costs.
+*   **Documentation:** The system must provide a publicly accessible or in-app schema reference to enable users to interpret and analyze their raw data.
