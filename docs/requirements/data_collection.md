@@ -5,7 +5,7 @@
 *   **Independence:** The system shall acquire location data without using proprietary third-party location APIs (e.g., Google Play Services FusedLocationProvider).
 *   **Persistence:** While the application is in the background or the device is sleeping, the system shall maintain continuous data collection.
 *   **Battery Saver Override:** While the OS "Battery Saver" mode is active, the system shall continue standard data collection operations.
-*   **Network Quality:** When recording a location point, the system shall record the network quality including computed signal level (0-4) and raw signal strength (dBm).
+*   **Network Quality:** When recording a location point, the system shall record the network quality metrics (Signal Level 0-4 and Raw dBm) for both Cellular and WiFi interfaces simultaneously, if available.
 
 ## 1.2. Optimization & Sensor Fusion
 *   **Dynamic Sampling:** When the device speed exceeds 4.5 m/s, the system shall record auxiliary environmental sensors (accelerometer, magnetometer, barometer).

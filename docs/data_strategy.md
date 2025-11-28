@@ -35,9 +35,11 @@ Each file is a Gzipped text file.
   "acc": 4.5,
   "alt": 120,
   "spd": 1.2,
-  "sig": 3,
-  "dbm": -85,
-  "net": "cell"
+  "bat": 94,
+  "cs": 3,
+  "cd": -85,
+  "ws": 2,
+  "wd": -60
 }
 ```
 
@@ -50,9 +52,18 @@ Each file is a Gzipped text file.
 | `acc` | Number (Float) | Horizontal Accuracy (Radius of 68% confidence). | Meters |
 | `alt` | Number (Double) | Altitude above WGS84 ellipsoid. | Meters |
 | `spd` | Number (Float) | Speed over ground. | m/s |
-| `sig` | Integer | Signal Level (0-4), as reported by Android `SignalStrength`. | Level (0-4) |
-| `dbm` | Integer | Raw Signal Strength. | dBm |
-| `net` | String | Network Type (e.g., "wifi", "cell", "none"). | N/A |
+| `bat` | Integer | Battery Level (0-100). | % |
+| `cs` | Integer | Cellular Signal Level (0-4). Optional. | Level (0-4) |
+| `cd` | Integer | Cellular Signal Strength (dBm). Optional. | dBm |
+| `ws` | Integer | WiFi Signal Level (0-4). Optional. | Level (0-4) |
+| `wd` | Integer | WiFi Signal Strength (RSSI). Optional. | dBm |
+| `ax` | Number (Float) | Accelerometer X (m/s²). Conditional (>4.5m/s). | m/s² |
+| `ay` | Number (Float) | Accelerometer Y (m/s²). Conditional (>4.5m/s). | m/s² |
+| `az` | Number (Float) | Accelerometer Z (m/s²). Conditional (>4.5m/s). | m/s² |
+| `mx` | Number (Float) | Magnetometer X (µT). Conditional (>4.5m/s). | µT |
+| `my` | Number (Float) | Magnetometer Y (µT). Conditional (>4.5m/s). | µT |
+| `mz` | Number (Float) | Magnetometer Z (µT). Conditional (>4.5m/s). | µT |
+| `bar` | Number (Float) | Barometer (Pressure). Conditional (>4.5m/s). | hPa |
 
 ## Synchronization Strategy: Lazy Loading
 
