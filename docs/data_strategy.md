@@ -4,7 +4,7 @@
 *   **Format:** NDJSON (Newline Delimited JSON), Gzipped.
 *   **Compression:** `.gz` (Expected ~90% size reduction).
 *   **Path Structure:**
-    `s3://<bucket_name>/tracks/YYYY/MM/DD/<device_id>_<start_timestamp>_v<version>.json.gz`
+    `s3://<bucket_name>/tracks/YYYY/MM/DD/<filename>`
 
 ## Schema Versioning
 *   **Current Version:** `v1`
@@ -12,6 +12,9 @@
 
 ## JSON Schema (v1)
 Each file is a Gzipped text file.
+
+**Filename Format:** `<device_id>_<start_timestamp>_v<version>.json.gz`
+*   **Example:** `Pixel7_a8f3_1698300000_v1.json.gz`
 
 **Line 1 (Header):**
 ```json

@@ -38,11 +38,13 @@ Now that the app can see the account, the user decides the path.
 1.  **Identity:** User enters a **Device Name** (e.g., "Pixel7").
     *   *Default:* Pre-filled with system model name.
     *   *Check:* App verifies this name is **unique** in the AWS account. If `Locus-Pixel7` already exists, the app **refuses** to proceed and asks for a different name (e.g., "Pixel7-Work").
-2.  **Permissions:** The "Two-Step Dance" for Location Permissions (Foreground -> Background).
-3.  **Deploy:** User taps "Deploy Infrastructure".
+2.  **Deploy:** User taps "Deploy Infrastructure".
     *   *Action:* App uses Bootstrap Keys to run CloudFormation.
     *   *Feedback:* "Provisioning Locus Store... (this may take 2 minutes)".
-4.  **Key Swap:** App automatically saves the restricted Runtime Keys and discards the Bootstrap Keys.
+3.  **Key Swap:** App automatically saves the restricted Runtime Keys and discards the Bootstrap Keys.
+4.  **Permissions:** The "Two-Step Dance" for Location Permissions.
+    *   *Phase A:* Request "While Using".
+    *   *Phase B:* Request "Allow all the time" (Background).
 5.  **Outcome:** Tracking begins.
 
 ---
@@ -56,8 +58,8 @@ Now that the app can see the account, the user decides the path.
     *   App reads the CloudFormation outputs for that specific stack.
     *   App saves the restricted Runtime Keys and discards the Bootstrap Keys.
 4.  **New Identity:**
-    *   App generates a fresh `device_id` (e.g., `Pixel7_recovery_x9`) to avoid write conflicts with previous installations.
-    *   *Note:* History is merged transparently in the view.
+    *   App generates a fresh `device_id` (e.g., `Pixel7_recovery_x9`).
+    *   **Why? (Conflict Prevention):** If the original device (e.g., the old phone) is turned back on, both devices would try to upload files with the same `device_id`. Since filenames are timestamp-based, this could lead to a "Split Brain" scenario where one device overwrites the data of the other. A unique ID ensures both streams are preserved safely.
 5.  **Lazy Sync:**
     *   App scans the bucket inventory to populate the calendar.
     *   **No massive download** occurs. Tracks are fetched on demand.
