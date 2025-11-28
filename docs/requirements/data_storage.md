@@ -8,7 +8,7 @@
 *   **User Ownership:** The system must transmit data exclusively to a storage repository owned and controlled by the user (e.g., a personal AWS S3 Bucket).
 *   **Periodic Sync:** The system must attempt to batch and upload buffered data at regular intervals (e.g., every 15 minutes).
 *   **Manual Sync:** The system must provide a mechanism for the user to force an immediate upload. This action must override non-critical battery safety checks.
-*   **Immutability:** The system must configure the remote storage to prevent the modification or deletion of uploaded history files (e.g., using Object Lock/Compliance Mode).
+*   **Immutability:** The system must configure the remote storage to prevent the modification or deletion of uploaded history files using Object Lock in Governance Mode with a default retention of 100 years (Indefinite).
 
 ## 2.3. Data Format
 *   **Interoperability:** Data must be stored in a standard, open, text-based format (NDJSON) to ensure future readability.
