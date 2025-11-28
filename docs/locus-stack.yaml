@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Locus: User-Owned Precision Tracker - S3 Bucket with Object Lock'
 
+Parameters:
+  StackName:
+    Type: String
+    Description: A unique name for your device/installation (e.g., Pixel7, MyPhone).
+    AllowedPattern: "^[a-zA-Z0-9]+$"
+    ConstraintDescription: Must be alphanumeric only.
+
 Resources:
   LocusDataBucket:
     Type: 'AWS::S3::Bucket'
@@ -16,14 +23,42 @@ Resources:
         ObjectLockEnabled: 'Enabled'
         Rule:
           DefaultRetention:
-            Mode: COMPLIANCE
-            Days: 365 # Default retention period (1 year). Can be adjusted.
+            Mode: GOVERNANCE
+            Days: 36500 # ~100 years (Indefinite)
 
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+
+  LocusUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub "locus-user-${StackName}"
+
+  LocusAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref LocusUser
+
+  LocusPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "locus-policy-${StackName}"
+      Users:
+        - !Ref LocusUser
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${LocusDataBucket}"
+              - !Sub "arn:aws:s3:::${LocusDataBucket}/*"
 
 Outputs:
   BucketName:
@@ -32,3 +67,9 @@ Outputs:
   BucketArn:
     Description: 'The ARN of the created S3 bucket'
     Value: !GetAtt LocusDataBucket.Arn
+  AccessKeyId:
+    Description: 'Runtime Access Key ID'
+    Value: !Ref LocusAccessKey
+  SecretAccessKey:
+    Description: 'Runtime Secret Access Key'
+    Value: !GetAtt LocusAccessKey.SecretAccessKey

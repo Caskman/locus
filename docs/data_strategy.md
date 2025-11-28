@@ -42,14 +42,23 @@ Each file is a Gzipped text file.
 
 To respect user data plans and battery life, Locus does not "sync" the entire history.
 
-### 1. Inventory First
-When connecting to an existing store, the app performs a lightweight scan of the S3 directory structure (`tracks/`).
+### 1. Inventory First (Recovery Only)
+When connecting to an existing store (e.g., first install or recovery), the app performs a lightweight scan of the S3 directory structure (`tracks/`).
 *   **Goal:** Build a local index of *which days* have data.
 *   **Mechanism:** Uses `ListObjects` with delimiters to identify Year/Month/Day prefixes.
 *   **Result:** The History Calendar is populated with indicators. No track data is downloaded.
 
-### 2. On-Demand Fetch
+### 2. Write-Through Indexing (Ongoing)
+Once the initial inventory is built, the local index is updated immediately upon successful upload of new data.
+*   **Goal:** Avoid expensive S3 listing operations for day-to-day use.
+*   **Mechanism:** Local database update transactionally linked to upload success.
+
+### 3. On-Demand Fetch
 Full track data is only downloaded when the user explicitly interacts with a specific date.
+
+## Retention Strategy
+*   **Local Buffer:** Deleted only after successful S3 upload verification.
+*   **Remote Storage:** Indefinite (100 Years). S3 Object Lock is enabled in Governance Mode to prevent accidental deletion while allowing administrative recovery if absolutely necessary.
 
 ## Identity & Write Patterns
 
