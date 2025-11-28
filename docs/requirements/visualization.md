@@ -3,7 +3,7 @@
 ## 3.1. Map Interface
 *   **Offline Capability:** The visualization engine must render map data using an open source (e.g., OpenStreetMap) that supports offline caching, removing dependencies on online-only API keys.
 *   **Signal Quality:** The interface must include a user-toggleable overlay that visualizes the quality of the network signal (Signal Strength). This overlay must visually differentiate between signal sources (e.g., WiFi vs. Cellular) and signal levels (e.g., via a heat map or color coding).
-*   **Performance & Optimization:** To ensure responsive rendering of large datasets, the system must apply geometric simplification (e.g., Ramer-Douglas-Peucker algorithm) to track data before drawing it on the map.
+*   **Performance & Optimization:** To ensure responsive rendering of large datasets, the system must apply geometric simplification (e.g., Ramer-Douglas-Peucker algorithm) to track data before drawing it on the map. This algorithm reduces the total number of points by removing redundant data along straight lines while preserving the visual shape of the track.
 *   **Summary Statistics:** For any selected day, the interface must calculate and display summary statistics, including Total Distance, Total Duration, and Average Speed.
 *   **Visual Discontinuity:** The map visualization must intentionally display a gap (no connecting line) between two sequential data points if the time difference between them exceeds 5 minutes, indicating a lack of continuous data.
 
