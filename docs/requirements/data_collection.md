@@ -9,7 +9,7 @@
 
 ## 1.2. Optimization & Sensor Fusion
 *   **Dynamic Sampling:** When the device speed exceeds 4.5 m/s, the system shall record auxiliary environmental sensors (accelerometer, magnetometer, barometer).
-*   **Stationary Mode:** When no movement is detected for 5 minutes, the system shall suspend GPS acquisition.
+*   **Stationary Mode:** When no movement is detected for 2 minutes, the system shall suspend GPS acquisition.
 *   **Wake-on-Motion:** While in Stationary Mode, when movement is detected via the accelerometer, the system shall immediately resume GPS acquisition.
 
 ## 1.3. Battery Safety Protocol
