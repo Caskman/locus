@@ -34,7 +34,10 @@ Each file is a Gzipped text file.
   "lon": -122.4194,
   "acc": 4.5,
   "alt": 120,
-  "spd": 1.2
+  "spd": 1.2,
+  "sig": 3,
+  "dbm": -85,
+  "net": "cell"
 }
 ```
 
