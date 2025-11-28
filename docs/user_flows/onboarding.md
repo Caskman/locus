@@ -42,7 +42,11 @@ Now that the app can see the account, the user decides the path.
     *   *Action:* App uses Bootstrap Keys to run CloudFormation.
     *   *Feedback:* "Provisioning Locus Store... (this may take 2 minutes)".
     *   *Resilience:* This process runs in a **Foreground Service** with a visible notification ("Provisioning Cloud Resources..."). This ensures the process completes even if the user switches apps or the screen turns off.
-3.  **Key Swap:** App automatically saves the restricted Runtime Keys and discards the Bootstrap Keys.
+3.  **Key Swap:**
+    *   App creates a new **IAM User** (e.g., `LocusUser_Pixel7`) using the Bootstrap Keys.
+    *   App generates an Access Key for this user.
+    *   App attaches a restricted policy (Bucket Access Only) to this user.
+    *   App saves these **Runtime Keys** and discards the Bootstrap Keys.
 4.  **Permissions:** The "Two-Step Dance" for Location Permissions.
     *   *Phase A:* Request "While Using".
     *   *Phase B:* Request "Allow all the time" (Background).
@@ -55,9 +59,10 @@ Now that the app can see the account, the user decides the path.
 1.  **Discovery:** App displays a list of detected Locus stores (e.g., `Pixel7`, `iPhone`).
     *   *Mechanism:* Filters `s3:ListBuckets` for `locus-*` prefix.
 2.  **Selection:** User taps the store they want to link.
-3.  **Key Swap:**
-    *   App reads the CloudFormation outputs for that specific stack.
-    *   App saves the restricted Runtime Keys and discards the Bootstrap Keys.
+3.  **Key Swap (New User):**
+    *   App creates a **New IAM User** for this device (e.g., `LocusUser_Pixel7_Recovery`).
+    *   *Note:* The app does **not** retrieve old keys from the existing stack. This ensures that the new device has its own unique, revocable credentials without interfering with prior installations.
+    *   App saves the new Runtime Keys and discards the Bootstrap Keys.
 4.  **New Identity:**
     *   App generates a fresh `device_id` (e.g., `Pixel7_recovery_x9`).
     *   **Why? (Conflict Prevention):** If the original device (e.g., the old phone) is turned back on, both devices would try to upload files with the same `device_id`. Since filenames are timestamp-based, this could lead to a "Split Brain" scenario where one device overwrites the data of the other. A unique ID ensures both streams are preserved safely.
