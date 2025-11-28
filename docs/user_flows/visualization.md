@@ -11,6 +11,7 @@
     *   **Local Check:** The app checks internal private storage for a cached track file for that date.
     *   **Remote Fetch:** If not cached, the app queries S3 for that date prefix and downloads the relevant `.gz` segments.
     *   **Processing:** The app stitches segments together, standardizes the time series, and updates the local cache.
+    *   **Write-Through Indexing:** Successful downloads (or uploads during daily operation) immediately update the local "History Index", ensuring the calendar view remains current without requiring expensive `s3:ListObjects` calls.
 *   **Step 4: Rendering:**
     *   **Source Verification:** The map renders *only* data confirmed to be in S3. Data currently in the local upload buffer is explicitly excluded to strictly verify remote storage.
     *   **Route:** The path is drawn on the offline-capable map.

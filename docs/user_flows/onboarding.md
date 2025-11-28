@@ -8,7 +8,7 @@ This flow covers both **New Installations** and **Recovery/Reconnection** to exi
 Before entering any keys, the app educates the user on the security model.
 *   **Action:** The user launches the app for the first time.
 *   **UI:** A landing page explaining that Locus is "Bring Your Own Cloud".
-*   **Guidance:** A prominent link: *"How to generate secure AWS keys"* points to the [Infrastructure Documentation](infrastructure.md).
+*   **Guidance:** A prominent link: *"How to generate secure AWS keys"* points to the [Infrastructure Documentation](../infrastructure.md).
     *   *Recommendation:* The docs explicitly recommend using **AWS CloudShell** to generate temporary 1-hour session tokens for maximum security.
 
 ## Step 1: Authentication & Validation
@@ -41,6 +41,7 @@ Now that the app can see the account, the user decides the path.
 2.  **Deploy:** User taps "Deploy Infrastructure".
     *   *Action:* App uses Bootstrap Keys to run CloudFormation.
     *   *Feedback:* "Provisioning Locus Store... (this may take 2 minutes)".
+    *   *Resilience:* This process runs in a **Foreground Service** with a visible notification ("Provisioning Cloud Resources..."). This ensures the process completes even if the user switches apps or the screen turns off.
 3.  **Key Swap:** App automatically saves the restricted Runtime Keys and discards the Bootstrap Keys.
 4.  **Permissions:** The "Two-Step Dance" for Location Permissions.
     *   *Phase A:* Request "While Using".
