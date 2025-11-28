@@ -10,3 +10,4 @@
 *   Ensure the app functions correctly in the absence of Google Play Services to maintain independence and data sovereignty
 *   Investigate mechanisms to detect and alert on silent data tracking failures
 *   Update README.md to reflect current project status and documentation structure
+*   Consider implementing a Lambda function to periodically compress multiple object files for a single day into a single archive
