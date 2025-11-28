@@ -16,4 +16,4 @@
     *   **Scenario B (Buffer Empty):** The app performs a lightweight "Connectivity Check" to verify S3 access credentials.
 *   **Step 4: Feedback:**
     *   **Success:** Buffer count clears to 0. "Last Sync" updates to "Just now". A "Success" toast appears.
-    *   **Failure:** A specific error message is displayed (e.g., "Upload failed: Network timeout"). No automatic retry is attempted for manual triggers.
+    *   **Failure:** A specific, actionable error message is displayed (e.g., "Upload failed: Check Internet Connection"). No automatic retry is attempted for manual triggers, putting the user in control of the next step.

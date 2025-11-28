@@ -12,8 +12,9 @@
 
 *   **Smart Adaptation (Sensing):**
     *   The system dynamically adjusts behavior based on movement and power states.
-    *   **Stationary:** The app enters "Low Power Mode" (GPS only, 1Hz) to save battery.
-    *   **Moving:** The app switches to "Full Fidelity Mode" (GPS + Sensors) for detailed tracking.
+    *   **Stationary:** The app enters "Sleep Mode" (GPS Off, Accelerometer Monitoring).
+        *   *Benefit:* This drastically reduces battery consumption compared to keeping the GPS active, allowing for multi-day battery life when the device is static.
+    *   **Moving:** When the accelerometer detects significant movement, the app wakes the GPS and switches to "Full Fidelity Mode" (GPS + Sensors) for detailed tracking.
     *   **Battery Saver Mode:** The app ignores the OS "Battery Saver" toggle and continues to request the Partial Wake Lock to ensure data continuity.
 
 *   **Battery Management:**
