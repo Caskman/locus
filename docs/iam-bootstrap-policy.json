@@ -17,7 +17,14 @@
                 "cloudformation:DescribeStackEvents",
                 "cloudformation:DescribeStackResources",
                 "cloudformation:GetTemplate",
-                "cloudformation:ValidateTemplate"
+                "cloudformation:ValidateTemplate",
+                "iam:CreateUser",
+                "iam:GetUser",
+                "iam:DeleteUser",
+                "iam:CreateAccessKey",
+                "iam:DeleteAccessKey",
+                "iam:PutUserPolicy",
+                "iam:DeleteUserPolicy"
             ],
             "Resource": "*"
         }
