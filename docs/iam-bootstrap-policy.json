@@ -20,11 +20,8 @@
                 "cloudformation:ValidateTemplate",
                 "iam:CreateUser",
                 "iam:GetUser",
-                "iam:DeleteUser",
                 "iam:CreateAccessKey",
-                "iam:DeleteAccessKey",
-                "iam:PutUserPolicy",
-                "iam:DeleteUserPolicy"
+                "iam:PutUserPolicy"
             ],
             "Resource": "*"
         }
