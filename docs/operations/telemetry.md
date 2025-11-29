@@ -92,10 +92,11 @@ To ensure the "Fail-Open" mandate:
 
 [^1]: **Tombstone Support:** The ability to read the final log buffer state from disk even after the application process has completely died/crashed (e.g., due to an OS kill or unhandled exception).
 
-2.  **Exception Swallowing (Data Loss Policy):**
-    *   **IF** a telemetry upload fails, **THEN** the system **shall** catch the exception, log it to the *Local Circular Buffer*, and discard the **current payload** (the batch of logs attempting upload).
-    *   **Consequence:** This means the telemetry data is **permanently lost from the remote server**.
-    *   **Justification:** Telemetry is non-critical data. Indefinite retries consume battery and bandwidth, which violates the core "Low Impact" requirements. The data remains available locally in the *Circular Buffer* for manual debugging if needed.
+2.  **Exception Swallowing (Best Effort Retry):**
+    *   **IF** a telemetry upload fails, **THEN** the system **shall** catch the exception and abort the **current attempt**.
+    *   **The system shall not** retry immediately (to preserve battery).
+    *   **Implicit Retry:** The failed logs **remain in the Local Circular Buffer**. They will naturally be included in the **next scheduled upload batch**, provided they have not been evicted by newer logs (FIFO).
+    *   **Trade-off:** This prioritizes battery life over guaranteed delivery. If the buffer overflows before the next successful sync, old logs are dropped.
 3.  **Circuit Breaking:**
     *   **IF** telemetry uploads fail consecutively for > 5 attempts, **THEN** the Telemetry Module **shall** enter a "Backoff" state for 6 hours.
 
