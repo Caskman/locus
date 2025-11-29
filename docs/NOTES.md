@@ -10,26 +10,16 @@
     *   If "Admin" is selected, the app requests `s3:ListBuckets` permission to discover all `locus-` buckets.
     *   Ensure the "Admin" feature is gated behind the initial setup (Bootstrap) to prevent accidental runtime scope expansion.
 
-## 2. Cache Eviction Policies
-*   **Requirement:** Prevent downloaded track data from consuming excessive device storage.
-*   **Feasibility:** High. Android provides APIs for checking available disk space and managing cache directories.
-*   **Best Practice:** **LRU (Least Recently Used)** eviction. When the cache hits a size limit (e.g., 500MB) or a time limit (e.g., data older than 90 days), delete the oldest accessed files first.
+## 2. IAM Strategy Verification
+*   **Requirement:** Verify that the project's IAM permissions adhere to AWS best practices and strictly defined security requirements.
+*   **Feasibility:** Medium. Requires deep knowledge of AWS IAM nuances.
+*   **Best Practice:** **Policy Simulation & Analysis**. Use tools like AWS Access Analyzer or `pmapper` to visualize access paths.
 *   **Recommendation:**
-    *   Implement a cache manager that runs periodically (via `WorkManager`).
-    *   Maintain a local index (Room DB) of downloaded files with a `last_accessed` timestamp.
-    *   Set a hard configurable limit (default 500MB).
-    *   Ensure "Stationary" or "Buffer" data (not yet uploaded) is never evicted.
+    *   Audit current policy templates against the "Least Privilege" rule.
+    *   Specifically check for `*` actions on `*` resources (e.g., `s3:*` on `*`).
+    *   Document the justification for every permission granted in `docs/infrastructure.md`.
 
-## 3. Manual IAM Credential Creation (No CloudFormation)
-*   **Requirement:** Update documentation to support a setup flow that does not rely on CloudFormation, possibly for users who prefer manual control or have restricted permissions.
-*   **Feasibility:** High. All AWS resources can be created manually or via CLI.
-*   **Best Practice:** **Transparency**. While IaC (Infrastructure as Code) like CloudFormation is preferred for reliability, providing a manual "break-glass" procedure increases trust and accessibility.
-*   **Recommendation:**
-    *   Create a "Manual Setup Guide" in `docs/manual_setup.md`.
-    *   List exact JSON policy documents required.
-    *   Provide AWS CLI commands as an alternative to Console screenshots (CLI is less likely to become outdated visually).
-
-## 4. User-Configurable Recording Frequency
+## 3. User-Configurable Recording Frequency
 *   **Requirement:** Allow users to adjust how often the app records location points.
 *   **Feasibility:** High. The Android `LocationRequest` API allows setting intervals.
 *   **Best Practice:** **User Choice with Sensible Defaults**. Provide presets (e.g., "High Accuracy" (1s), "Balanced" (10s), "Power Saver" (60s)) rather than raw millisecond inputs.
@@ -38,7 +28,7 @@
     *   Update the `ForegroundService` to restart the location listener when preferences change.
     *   Warn the user about battery impact for high-frequency settings.
 
-## 5. Independence from Google Play Services
+## 4. Independence from Google Play Services
 *   **Requirement:** Ensure functionality on de-Googled devices (e.g., GrapheneOS, LineageOS).
 *   **Feasibility:** High.
 *   **Best Practice:** **Standard Standards**. Use `android.location.LocationManager` (Platform API) instead of `com.google.android.gms.location.FusedLocationProviderClient`. Use `osmdroid` for maps instead of Google Maps SDK.
@@ -46,6 +36,15 @@
     *   Avoid any dependency on `com.google.android.gms`.
     *   Test on an Android Virtual Device (AVD) image that does not have Google APIs installed ("AOSP" image).
     *   Use OpenStreetMap (OSM) for all visualization.
+
+## 5. Silent Failure Detection
+*   **Requirement:** Detect and alert if tracking stops unexpectedly (e.g., due to OS kill or crash) without user knowledge.
+*   **Feasibility:** Medium. The OS can be aggressive with background services.
+*   **Best Practice:** **Watchdog / Heartbeat**. A separate component should periodically check if the primary service is running/updating.
+*   **Recommendation:**
+    *   Use `WorkManager` for a periodic "Health Check" task (e.g., every 15 minutes).
+    *   Check the timestamp of the last recorded location in the database.
+    *   If the gap exceeds a threshold (e.g., 20 minutes) and the user didn't manually stop tracking, trigger a high-priority notification: "Tracking appears to have stopped."
 
 ## 6. README & Documentation Updates
 *   **Requirement:** Keep the README current with project status.
@@ -73,3 +72,12 @@
     *   **Traccar:** Enterprise-grade fleet management. Powerful but complex to set up and manage for a single user. *Locus Differentiator:* Simplicity and focus on personal archival.
     *   **Google Maps Timeline:** Convenient but privacy-invasive. Data is mined. *Locus Differentiator:* Absolute data sovereignty and encryption.
     *   Create a `docs/ecosystem_comparison.md` to map feature parity and unique advantages.
+
+## 9. Privacy Zones & Location Obfuscation
+*   **Requirement:** Obscure sensitive locations (e.g., user's home or office) in the visualization to protect privacy when viewing or sharing data, similar to Strava's "Privacy Zone" feature (e.g., masking the last 500m).
+*   **Feasibility:** High. Can be implemented in the client-side visualization logic.
+*   **Best Practice:** **Non-Destructive Presentation**. Store the raw, high-precision data in S3 (as the user owns it and it is their archival record). Apply the privacy mask *only* at the rendering layer or during specific "Share/Export" operations.
+*   **Recommendation:**
+    *   Add a "Privacy Zones" section in Settings allowing users to define coordinates and a radius (e.g., "Home", 500m).
+    *   In the *Visualizer*, filter or clip track segments that intersect these zones.
+    *   Ensure the raw data on S3 remains untouched to preserve the integrity of the personal archive.
