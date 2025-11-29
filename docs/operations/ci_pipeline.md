@@ -41,8 +41,9 @@ The pipeline executes checks in order of speed and cost.
 ### Tier 2: Unit Testing & Architecture (Fast)
 *   **Functional Logic:**
     *   **Scope:** Domain layer, Data layer (Room DAOs via Robolectric), and ViewModels.
-    *   **Tool:** JUnit 5, MockK.
+    *   **Tool:** JUnit 5, MockK, Robolectric.
     *   **Command:** `./gradlew testDebugUnitTest`
+    *   **Simulated Scenarios:** Robolectric tests for Non-Functional requirements (Battery Safety, Network Backoff).
 *   **Architecture Governance:**
     *   **Tool:** `ArchUnit`
     *   **Scope:** Enforces rules defined in `agents/rules/android_architecture.md` (e.g., "Domain layer must not depend on Android SDK").
@@ -63,8 +64,21 @@ The pipeline executes checks in order of speed and cost.
 *   **Command:** `./scripts/verify_security.sh`
 
 ## 4. Continuous Integration (GitHub Actions)
+### Tier 4: Infrastructure Audit (Optional)
+*   **Scope:** Validation of CloudFormation deployment logic (Dry Run).
+*   **Tool:** `taskcat` or `aws cloudformation create-change-set`.
+*   **Command:** `./scripts/audit_infrastructure.sh`
+*   **Details:** Verifies quota limits and circular dependencies without permanent deployment.
 
-The `.github/workflows/validation.yml` workflow orchestrates these tiers.
+### Tier 5: Device Farm & Hardware (Pre-Release)
+*   **Scope:** Full end-to-end verification on physical devices.
+*   **Trigger:** Manual only (`workflow_dispatch`).
+*   **Tool:** AWS Device Farm (via `scripts/run_device_farm.py`).
+*   **Details:** See [Advanced Validation Strategy](advanced_validation.md).
+
+## 3. Continuous Integration (GitHub Actions)
+
+The `.github/workflows/validation.yml` workflow orchestrates Tiers 1-3 automatically. Tiers 4 and 5 are triggered manually.
 
 ```yaml
 name: Validation
