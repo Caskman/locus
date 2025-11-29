@@ -71,8 +71,9 @@ To respect user data plans and battery life, Locus does not "sync" the entire hi
 
 ### 1. Lazy-Load Indexing
 The application builds its knowledge of history *on demand* rather than maintaining a strict local database of all remote files.
-*   **Mechanism:** When the user navigates to a specific Month in the UI, the app performs an S3 Prefix Search (`ListObjects` with prefix `tracks/YYYY/MM/`) to identify which Days have data.
-*   **Caching:** This index data is cached locally to prevent redundant network calls, but S3 remains the Source of Truth.
+*   **Mechanism:** When the user navigates to a specific Month in the UI:
+    *   **Past Months:** If the month is in the past AND a local index exists, use the cache (No Network).
+    *   **Current Month / Missing Cache:** Perform an S3 Prefix Search (`ListObjects` with prefix `tracks/YYYY/MM/`) to identify days with data and update the cache.
 
 ### 2. On-Demand Fetch
 Full track data is only downloaded when the user explicitly interacts with a specific date.
