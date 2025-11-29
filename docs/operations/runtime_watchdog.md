@@ -33,20 +33,23 @@ To detect "Zombie" services (where the process is alive but the thread is deadlo
 ### 3.2. The Watchdog Worker
 *   **Component:** `WatchdogWorker` (Extends `CoroutineWorker`).
 *   **Triggers:**
-    *   Periodic: Every 15 minutes (Minimum interval for `WorkManager`).
-    *   Event-Driven: On `BOOT_COMPLETED`, on `MY_PACKAGE_REPLACED` (App Update).
+    *   **Periodic:** Every 15 minutes (Minimum interval for `WorkManager`).
+    *   **Event-Driven:**
+        *   `BOOT_COMPLETED`: Reschedules the Watchdog and checks state after device restart.
+        *   `MY_PACKAGE_REPLACED`: Reschedules the Watchdog after an app update.
 *   **Constraints:**
     *   **Uploads:** Only attempts upload recovery if `Battery > 15%` to prevent death loops on low battery.
     *   **Checks:** Always runs (low cost) to verify safety invariants.
 
 ### 3.3. Circuit Breaker (Anti-Loop)
 To prevent infinite restart loops when a fatal bug exists:
-1.  **Counter:** The Watchdog maintains a `ConsecutiveRestartCount`.
-2.  **Success:** If the Service runs successfully for > 15 minutes, reset `ConsecutiveRestartCount` to 0.
+1.  **Counter:** The Watchdog maintains a `ConsecutiveRestartCount` (persisted in SharedPreferences).
+2.  **Success:** If the Service runs successfully for > 15 minutes (verified by a fresh Heartbeat), reset `ConsecutiveRestartCount` to 0.
 3.  **Failure:** If the Watchdog must restart the service, increment `ConsecutiveRestartCount`.
-4.  **Strike Three:** IF `ConsecutiveRestartCount >= 3`:
+4.  **Strike Three (Trip):** IF `ConsecutiveRestartCount >= 3`:
     *   **Stop Retrying.**
     *   **Action:** Trigger **Tier 3 Fatal Error**: "Tracking Failed: Service Unstable."
+5.  **Reset Condition:** The Circuit Breaker is reset to Closed (0) **only** when the user manually opens the application or toggles tracking, acknowledging the error.
 
 ## 4. Telemetry Integration
 
