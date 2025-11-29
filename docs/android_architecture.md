@@ -2,7 +2,22 @@
 
 The Android application acts as both the data collector and the infrastructure controller. It implements the behaviors defined in the Functional Requirements.
 
-## 1. Provisioner (Setup)
+## 1. Build Strategy (Privacy & Variants)
+To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (Beta) requirements, the application utilizes **Product Flavors**:
+
+*   **Standard (`standard`):**
+    *   **External Dependencies:** Includes **Firebase Crashlytics** and **Google Play Services**.
+    *   **Goal:** Used for the Play Store and internal Beta testing to gather community crash statistics (Opt-In).
+    *   **Dependency List:**
+        *   `com.google.firebase:firebase-crashlytics`
+        *   `com.google.android.gms:play-services-location`
+*   **FOSS (`foss`):**
+    *   **External Dependencies:** **Zero.** All proprietary libraries are stripped at compile time.
+    *   **Goal:** Used for F-Droid and privacy-focused manual installation.
+    *   **Mechanism:** Uses "No-Op" stubs for the Community Telemetry interface.
+    *   **Implication:** FOSS users lose access to "Community Health Stats" (aggregated crash reports and performance metrics, e.g., ANRs) and the "Fused Location Provider" (relying on Raw GPS instead).
+
+## 2. Provisioner (Setup)
 *   **Role:** Handles the one-time setup and infrastructure creation.
 *   **Components:** UI Wizards, AWS SDK (CloudFormation client).
 *   **Responsibilities:**
@@ -12,7 +27,7 @@ The Android application acts as both the data collector and the infrastructure c
     *   Transition to Runtime Keys upon success.
 *   **Implements Requirements:** [Setup & Onboarding](requirements/setup_onboarding.md)
 
-## 2. Tracker Service (The Engine)
+## 3. Tracker Service (The Engine)
 *   **Role:** Performs the "Always-on" data collection.
 *   **Component:** `ForegroundService`.
 *   **Key Mechanisms:**
@@ -28,7 +43,7 @@ The Android application acts as both the data collector and the infrastructure c
 *   **Output:** Writes raw `Location` objects to the local Room Database (Android's standard SQLite abstraction library).
 *   **Implements Requirements:** [Data Collection & Tracking](requirements/data_collection.md)
 
-## 3. Reliability Layer (The Watchdog)
+## 4. Reliability Layer (The Watchdog)
 *   **Role:** Ensures the Tracker Service remains active despite aggressive OEM battery optimizations (e.g., Samsung/Huawei killing background processes).
 *   **Component:** `WorkManager` (PeriodicWorkRequest, 15-minute interval).
 *   **Logic:**
@@ -37,19 +52,18 @@ The Android application acts as both the data collector and the infrastructure c
     3.  **Circuit Breaker:** If restart fails 3 consecutive times, triggers a "Tracking Failed" Fatal Error notification.
     4.  **Upload Rescue:** If buffer > 4 hours old AND Battery > 15%, triggers a rescue upload.
 
-## 4. Sync Worker (The Uploader)
-*   **Role:** Handles reliable data transport and storage management.
+## 5. Sync & Telemetry Worker (The Uploader)
+*   **Role:** Handles reliable data transport (Tracks & Logs).
 *   **Component:** `WorkManager` (PeriodicWorkRequest).
 *   **Responsibilities:**
-    *   **Streaming Uploads:** Stream data directly from the Room DB through a Gzip compressor to the Network socket to minimize RAM usage.
-    *   **Buffer Management (FIFO):** Enforce a **500MB Soft Limit**.
-        *   *Definition:* "Soft" means the system handles the limit gracefully without crashing or stopping recording.
-        *   *Action:* If exceeded, the system deletes the *oldest* unsynced records to make room for new data.
+    *   **Dual Dispatch:** Uploads Tracks to S3 and Telemetry to both S3 and Community (if Standard/Opt-In).
+    *   **Logical Isolation:** Although scheduled by the same `WorkManager` job for battery efficiency, Sync and Telemetry must execute in separate `try/catch` blocks. A crash in the Telemetry uploader **must not** prevent Track data from syncing, and vice versa.
+    *   **Streaming Uploads:** Stream data directly from the Room DB through a Gzip compressor.
+    *   **Buffer Management:** Enforce a **500MB Soft Limit** (FIFO eviction).
     *   **Transport:** Upload to S3 using the Runtime Keys.
-    *   **Cleanup:** Delete local records only after a successful S3 response (`200 OK`).
-*   **Implements Requirements:** [Data Storage & Management](requirements/data_storage.md)
+*   **Implements Requirements:** [Data Storage](requirements/data_storage.md) & [Telemetry](operations/telemetry.md)
 
-## 5. Visualizer (The View)
+## 6. Visualizer (The View)
 *   **Role:** Provides the user interface for exploring history.
 *   **Components:** `osmdroid` MapView, Local Cache (File System).
 *   **Responsibilities:**
@@ -58,13 +72,13 @@ The Android application acts as both the data collector and the infrastructure c
     *   **Caching:** Store downloaded track files locally to support offline viewing.
 *   **Implements Requirements:** [Visualization & History](requirements/visualization.md)
 
-## 6. Local Data Persistence
+## 7. Local Data Persistence
 *   **Role:** Intermediate buffer and state storage.
 *   **Components:**
     *   **Room Database:** Stores pending location points and application logs.
-    *   **EncryptedSharedPreferences:** Stores sensitive AWS credentials (Runtime Keys) and configuration (Device ID).
+    *   **EncryptedSharedPreferences:** Stores sensitive AWS credentials (Runtime Keys), configuration (Device ID), and the **Telemetry Salt**.
 
-## 7. Battery Impact Analysis
+## 8. Battery Impact Analysis
 To ensure transparency and manage user expectations, we estimate the battery impact of the "Always On" architecture.
 
 *   **High Impact (GPS/Network):**
