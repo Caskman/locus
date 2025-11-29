@@ -14,6 +14,6 @@
 *   **Remote Verification:** The history view must source data exclusively from the remote storage (or a local cache of verified remote data) to confirm data sovereignty and successful upload. Local buffer data should not be mixed into the "History" view until it is uploaded.
 *   **Lazy Loading:** The system must index the existence of historical data (e.g., which days have tracks) by querying S3 on-demand.
     *   **Mechanism:** When the user views a month:
-        *   **Cache Hit:** If the month is fully in the past (e.g., viewing March in April) and the local cache is populated, do *not* query S3.
-        *   **Cache Miss/Refresh:** If the month is the *Current Month* or the cache is missing, issue a `ListObjects` request for that month prefix (`tracks/YYYY/MM/`).
+        *   **Cache Hit:** If the month is fully in the past (e.g., viewing March in April) AND the local cache entry was created *after* the last day of that month, do *not* query S3.
+        *   **Cache Miss/Refresh:** If the month is the *Current Month*, or the cache entry is missing, or the cache entry is stale (created before the month ended), issue a `ListObjects` request for that month prefix (`tracks/YYYY/MM/`).
 *   **Data Merging:** The system must identify and merge track segments from multiple unique Device IDs that occurred on the same calendar day, presenting them as a unified history view to the user.

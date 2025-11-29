@@ -22,7 +22,7 @@ The Android application acts as both the data collector and the infrastructure c
         *   **Fallback:** Raw Android Location Manager (GPS/Network) if Play Services are unavailable or disabled by the user.
     *   **Stationary Manager:**
         *   **Primary:** Significant Motion Sensor (`TYPE_SIGNIFICANT_MOTION`). This is a specific hardware interrupt that wakes the Application Processor (AP) from suspend only when movement is detected, avoiding the battery cost of continuous polling.
-        *   **Fallback:** Periodic Accelerometer Polling if hardware sensor is missing.
+        *   **Fallback:** Periodic Burst Sampling (if hardware sensor is missing). The system uses `AlarmManager` to wake the CPU every few minutes (e.g., 5 minutes), samples the accelerometer at 10Hz for a short burst (e.g., 5 seconds), and resumes active tracking if variance exceeds a threshold.
     *   **Battery Monitor:** BroadcastReceiver to trigger "Battery Safety Protocol" state changes.
 *   **Output:** Writes raw `Location` objects to the local Room Database (Android's standard SQLite abstraction library).
 *   **Implements Requirements:** [Data Collection & Tracking](requirements/data_collection.md)
