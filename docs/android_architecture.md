@@ -17,34 +17,61 @@ The Android application acts as both the data collector and the infrastructure c
 *   **Component:** `ForegroundService`.
 *   **Key Mechanisms:**
     *   **Wake Locks:** Uses `PARTIAL_WAKE_LOCK` to ensure CPU uptime.
-    *   **Location Manager:** direct interaction with standard Android Location APIs (GPS).
-    *   **Sensor Manager:** Monitoring accelerometer for the "Stationary Mode" state machine.
+    *   **Location Strategy:**
+        *   **Primary:** Fused Location Provider (Google Play Services) for battery efficiency, rapid fix, and indoor accuracy.
+        *   **Fallback:** Raw Android Location Manager (GPS/Network) if Play Services are unavailable or disabled by the user.
+    *   **Stationary Manager:**
+        *   **Primary:** Significant Motion Sensor (`TYPE_SIGNIFICANT_MOTION`). This is a specific hardware interrupt that wakes the Application Processor (AP) from suspend only when movement is detected, avoiding the battery cost of continuous polling.
+        *   **Fallback:** Periodic Burst Sampling (if hardware sensor is missing). The system uses `AlarmManager` to wake the CPU every few minutes (e.g., 5 minutes), samples the accelerometer at 10Hz for a short burst (e.g., 5 seconds), and resumes active tracking if variance exceeds a threshold.
     *   **Battery Monitor:** BroadcastReceiver to trigger "Battery Safety Protocol" state changes.
-*   **Output:** Writes raw `Location` objects to the local Room Database.
+*   **Output:** Writes raw `Location` objects to the local Room Database (Android's standard SQLite abstraction library).
 *   **Implements Requirements:** [Data Collection & Tracking](requirements/data_collection.md)
 
-## 3. Sync Worker (The Uploader)
+## 3. Reliability Layer (The Watchdog)
+*   **Role:** Ensures the Tracker Service remains active despite aggressive OEM battery optimizations (e.g., Samsung/Huawei killing background processes).
+*   **Component:** `WorkManager` (PeriodicWorkRequest, 15-minute interval).
+*   **Logic:**
+    1.  Check if `TrackerService` is running.
+    2.  If **Running**: Do nothing.
+    3.  If **Stopped**: Attempt to restart the service immediately.
+    4.  If **Restart Fails**: Trigger a "Tracking Stopped" notification to alert the user.
+
+## 4. Sync Worker (The Uploader)
 *   **Role:** Handles reliable data transport and storage management.
 *   **Component:** `WorkManager` (PeriodicWorkRequest).
 *   **Responsibilities:**
-    *   **Batching:** Query the oldest pending records from the Room DB.
-    *   **Formatting:** Convert records to NDJSON and compress (Gzip).
+    *   **Streaming Uploads:** Stream data directly from the Room DB through a Gzip compressor to the Network socket to minimize RAM usage.
+    *   **Buffer Management (FIFO):** Enforce a **500MB Soft Limit**.
+        *   *Definition:* "Soft" means the system handles the limit gracefully without crashing or stopping recording.
+        *   *Action:* If exceeded, the system deletes the *oldest* unsynced records to make room for new data.
     *   **Transport:** Upload to S3 using the Runtime Keys.
     *   **Cleanup:** Delete local records only after a successful S3 response (`200 OK`).
-    *   **Indexing:** Update the local "History Index" upon successful upload.
 *   **Implements Requirements:** [Data Storage & Management](requirements/data_storage.md)
 
-## 4. Visualizer (The View)
+## 5. Visualizer (The View)
 *   **Role:** Provides the user interface for exploring history.
 *   **Components:** `osmdroid` MapView, Local Cache (File System).
 *   **Responsibilities:**
-    *   **Indexing:** Maintain a local index of available dates (synced via `ListObjects` or Write-Through).
-    *   **Rendering:** Draw tracks on the map, applying downsampling for performance.
+    *   **Lazy-Load Indexing:** Maintain a local index of available dates. Verify against S3 using Prefix Search (`tracks/YYYY/MM/`) only when the user requests a specific month.
+    *   **Rendering:** Draw tracks on the map using Bitmap Tiles (OSMDroid), applying downsampling for performance.
     *   **Caching:** Store downloaded track files locally to support offline viewing.
 *   **Implements Requirements:** [Visualization & History](requirements/visualization.md)
 
-## 5. Local Data Persistence
+## 6. Local Data Persistence
 *   **Role:** Intermediate buffer and state storage.
 *   **Components:**
     *   **Room Database:** Stores pending location points and application logs.
     *   **EncryptedSharedPreferences:** Stores sensitive AWS credentials (Runtime Keys) and configuration (Device ID).
+
+## 7. Battery Impact Analysis
+To ensure transparency and manage user expectations, we estimate the battery impact of the "Always On" architecture.
+
+*   **High Impact (GPS/Network):**
+    *   *Raw GPS:* Heavy drain (~5-10% per hour active).
+    *   *Mitigation:* Fused Location Provider (FLP) drastically reduces this by using low-power WiFi scanning. Stationary Mode completely suspends GPS when not moving.
+*   **Medium Impact (Wake Locks):**
+    *   *CPU Awake:* `PARTIAL_WAKE_LOCK` keeps the CPU active.
+    *   *Mitigation:* Significant Motion Sensor allows the CPU to enter Deep Sleep during stationary periods (e.g., sitting at a desk, sleeping).
+*   **Low Impact (Uploads):**
+    *   *Radio usage:* Cellular radio power is high but bursty.
+    *   *Mitigation:* Batching uploads via `WorkManager` allows the radio to sleep for long intervals.

@@ -69,22 +69,19 @@ Each file is a Gzipped text file.
 
 To respect user data plans and battery life, Locus does not "sync" the entire history.
 
-### 1. Inventory First (Recovery Only)
-When connecting to an existing store (e.g., first install or recovery), the app performs a lightweight scan of the S3 directory structure (`tracks/`).
-*   **Goal:** Build a local index of *which days* have data.
-*   **Mechanism:** Uses `ListObjects` with delimiters to identify Year/Month/Day prefixes.
-*   **Result:** The History Calendar is populated with indicators. No track data is downloaded.
+### 1. Lazy-Load Indexing
+The application builds its knowledge of history *on demand* rather than maintaining a strict local database of all remote files.
+*   **Mechanism:** When the user navigates to a specific Month in the UI:
+    *   **Past Months (Cache Hit):** If the month is fully in the past AND the local cache was updated *after* the month ended, use the cache (No Network).
+    *   **Current Month / Stale Cache:** If the month is current, or the cache timestamp is older than the month's end date, perform an S3 Prefix Search (`ListObjects` with prefix `tracks/YYYY/MM/`) to discover new data.
 
-### 2. Write-Through Indexing (Ongoing)
-Once the initial inventory is built, the local index is updated immediately upon successful upload of new data.
-*   **Goal:** Avoid expensive S3 listing operations for day-to-day use.
-*   **Mechanism:** Local database update transactionally linked to upload success.
-
-### 3. On-Demand Fetch
+### 2. On-Demand Fetch
 Full track data is only downloaded when the user explicitly interacts with a specific date.
 
 ## Retention Strategy
-*   **Local Buffer:** Deleted only after successful S3 upload verification.
+*   **Local Buffer:**
+    *   **FIFO Protocol:** A 500MB soft limit is enforced. If the buffer is full, the oldest *unsynced* records are deleted to make room for new data.
+    *   **Cleanup:** Synced records are deleted from the local buffer only after successful S3 upload verification (`200 OK`).
 *   **Remote Storage:** Indefinite (100 Years). S3 Object Lock is enabled in Governance Mode to prevent accidental deletion while allowing administrative recovery if absolutely necessary.
 
 ## Identity & Write Patterns
