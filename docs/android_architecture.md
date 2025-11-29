@@ -6,12 +6,16 @@ The Android application acts as both the data collector and the infrastructure c
 To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (Beta) requirements, the application utilizes **Product Flavors**:
 
 *   **Standard (`standard`):**
-    *   **External Dependencies:** Includes Firebase Crashlytics and Google Play Services.
+    *   **External Dependencies:** Includes **Firebase Crashlytics** and **Google Play Services**.
     *   **Goal:** Used for the Play Store and internal Beta testing to gather community crash statistics (Opt-In).
+    *   **Dependency List:**
+        *   `com.google.firebase:firebase-crashlytics`
+        *   `com.google.android.gms:play-services-location`
 *   **FOSS (`foss`):**
     *   **External Dependencies:** **Zero.** All proprietary libraries are stripped at compile time.
     *   **Goal:** Used for F-Droid and privacy-focused manual installation.
     *   **Mechanism:** Uses "No-Op" stubs for the Community Telemetry interface.
+    *   **Implication:** FOSS users lose access to "Community Health Stats" (which they likely don't want) and "Fused Location Provider" (relying on Raw GPS instead).
 
 ## 2. Provisioner (Setup)
 *   **Role:** Handles the one-time setup and infrastructure creation.
@@ -52,6 +56,7 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
 *   **Component:** `WorkManager` (PeriodicWorkRequest).
 *   **Responsibilities:**
     *   **Dual Dispatch:** Uploads Tracks to S3 and Telemetry to both S3 and Community (if Standard/Opt-In).
+    *   **Logical Isolation:** Although scheduled by the same `WorkManager` job for battery efficiency, Sync and Telemetry must execute in separate `try/catch` blocks. A crash in the Telemetry uploader **must not** prevent Track data from syncing.
     *   **Streaming Uploads:** Stream data directly from the Room DB through a Gzip compressor.
     *   **Buffer Management:** Enforce a **500MB Soft Limit** (FIFO eviction).
     *   **Transport:** Upload to S3 using the Runtime Keys.

@@ -31,6 +31,7 @@ graph TD
     style UserBucket fill:#ccf,stroke:#333
     style ExtService fill:#fcc,stroke:#333,stroke-dasharray: 5 5
 ```
+*Note: The above diagram can be rendered using any Markdown editor with Mermaid support.*
 
 ### 2.1. Build Variants (Flavors)
 
@@ -85,9 +86,11 @@ Each line in the log file **must** adhere to the following schema:
 
 To ensure the "Fail-Open" mandate:
 
-1.  **Isolation:** Telemetry operations **must** run in isolated Coroutine scopes (e.g., `Dispatchers.IO`).
+1.  **Isolation:** Telemetry operations **must** run in isolated Coroutine scopes (e.g., `Dispatchers.IO`) wrapped in top-level `try-catch` blocks.
+    *   **Requirement:** A crash in the logging subsystem **must never** propagate to the calling thread (e.g., the tracking loop).
+    *   **Buffer Safety:** The *Local Circular Buffer* shall use a low-level, robust implementation (e.g., `mmap` or file-append) to maximize the chance of persisting logs even during a process crash (Tombstone support).
 2.  **Exception Swallowing:**
-    *   **IF** a telemetry upload fails, **THEN** the system **shall** catch the exception, log it to the *Local Circular Buffer*, and discard the payload.
+    *   **IF** a telemetry upload fails, **THEN** the system **shall** catch the exception, log it to the *Local Circular Buffer*, and discard the **current payload** (the batch of logs attempting upload).
     *   **The system shall not** retry telemetry uploads more than once per batch.
 3.  **Circuit Breaking:**
     *   **IF** telemetry uploads fail consecutively for > 5 attempts, **THEN** the Telemetry Module **shall** enter a "Backoff" state for 6 hours.
