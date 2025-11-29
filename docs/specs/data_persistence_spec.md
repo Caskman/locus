@@ -1,7 +1,6 @@
 # Data Persistence Specification (Phase 1)
 
 **Status:** Draft
-**Last Updated:** 2024-05-23
 **Related Requirements:** [Data Storage](../requirements/data_storage.md), [Data Strategy](../data_strategy.md)
 
 This document defines the technical implementation for the Local Data Persistence layer, utilizing the Android Room Persistence Library (SQLite).
