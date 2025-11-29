@@ -99,3 +99,13 @@
     *   Deploy a Python/Go Lambda function.
     *   Script: List objects for `tracks/YYYY/MM/DD-1/`. Download, concatenate NDJSON, GZIP, Upload `tracks/YYYY/MM/DD-1/archive.json.gz`. Delete originals (optional/careful).
     *   **Caution:** Deleting originals is risky. Maybe move them to a `glacier` class or just keep the archive as an "optimized view".
+
+## 12. App Ecosystem Evaluation
+*   **Requirement:** Analyze existing location tracking applications to identify feature gaps, privacy models, and storage architectures, ensuring Locus provides a distinct and superior value proposition (User-Owned Data).
+*   **Feasibility:** High. The market is well-defined.
+*   **Best Practice:** **Competitor Analysis**. Understand the landscape to avoid redundancy and clarify the unique selling point (USP).
+*   **Recommendation:**
+    *   **OwnTracks:** Open-source, self-hosted. Relies on MQTT/HTTP and a running server (e.g., Mosquitto + Recorder). *Locus Differentiator:* Serverless architecture (Direct-to-S3) removing maintenance overhead.
+    *   **Traccar:** Enterprise-grade fleet management. Powerful but complex to set up and manage for a single user. *Locus Differentiator:* Simplicity and focus on personal archival.
+    *   **Google Maps Timeline:** Convenient but privacy-invasive. Data is mined. *Locus Differentiator:* Absolute data sovereignty and encryption.
+    *   Create a `docs/ecosystem_comparison.md` to map feature parity and unique advantages.
