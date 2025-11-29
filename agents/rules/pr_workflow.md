@@ -7,4 +7,5 @@
     1.  Ensure the primary branch (`main` or `master`) is fully up to date.
     2.  Create a **new branch** from the updated primary branch.
     3.  **Redo the changes** on that new branch.
+    4.  **Submit a new Pull Request** for this new branch.
     *   *Do not bother resolving merge conflicts on the existing branch.*
