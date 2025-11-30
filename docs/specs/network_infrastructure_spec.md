@@ -21,6 +21,37 @@ To adhere to the "Bootstrap vs. Runtime" security model, the network layer is sp
 1.  **Bootstrap Module:** Handles high-privilege, ephemeral operations (Stack Deployment). Dependencies are only injected into the `OnboardingViewModel`.
 2.  **Runtime Module:** Handles daily low-privilege operations (Data Upload, History Sync). Dependencies are available to the `Worker` scope and main app.
 
+### 1.3. Architecture Diagram
+```mermaid
+graph TD
+    subgraph "Domain Layer"
+        Repos[Repositories]
+    end
+
+    subgraph "Network Layer (Hilt)"
+        subgraph "Bootstrap Scope (Onboarding)"
+            CFClient[CloudFormation Client]
+        end
+
+        subgraph "Singleton Scope (Runtime)"
+            S3Client[S3 Client]
+            Telem[Community Telemetry]
+        end
+    end
+
+    subgraph "AWS Cloud"
+        CF[CloudFormation]
+        S3[User S3 Bucket]
+    end
+
+    Repos --> CFClient
+    Repos --> S3Client
+    Repos --> Telem
+
+    CFClient -- Bootstrap Creds --> CF
+    S3Client -- Runtime Creds --> S3
+```
+
 ## 2. AWS Client Configuration
 
 All AWS clients must be configured with consistent timeouts, retry policies, and identification.
@@ -62,6 +93,14 @@ All uploaded files must be Gzipped.
     3.  Close stream.
     4.  Upload resulting bytes.
 
+#### Data Pipeline Diagram
+```mermaid
+flowchart LR
+    List[List<LocationPoint>] -->|Serialization| JSON[NDJSON String]
+    JSON -->|GZIPOutputStream| Bytes[Compressed Bytes]
+    Bytes -->|PutObject| S3[AWS S3]
+```
+
 ### 3.3. File Naming Convention
 *   **Tracks:** `tracks/YYYY/MM/DD/<device_id>_<start_timestamp>_v1.json.gz`
     *   `v1` is the integer schema version.
@@ -82,6 +121,28 @@ All uploaded files must be Gzipped.
     *   **Polling:** Use `DescribeStacks` every 5 seconds to check `StackStatus`.
     *   **Success:** Status is `CREATE_COMPLETE`.
     *   **Output Retrieval:** Parse `Outputs` to get `BucketName`, `AccessKeyId`, `SecretAccessKey`.
+
+#### Bootstrap Sequence
+```mermaid
+sequenceDiagram
+    participant VM as OnboardingViewModel
+    participant CF as CloudFormationClient
+    participant AWS as AWS CloudFormation
+
+    VM->>CF: deployStack(name, keys)
+    CF->>AWS: CreateStack(Template, Params)
+    AWS-->>CF: StackID (Pending)
+
+    loop Every 5s
+        CF->>AWS: DescribeStacks(StackID)
+        AWS-->>CF: Status (CREATE_IN_PROGRESS)
+    end
+
+    CF->>AWS: DescribeStacks(StackID)
+    AWS-->>CF: Status (CREATE_COMPLETE) + Outputs
+
+    CF-->>VM: Success(BucketName, RuntimeKeys)
+```
 
 ### 4.2. Runtime Client (S3)
 **Interface:** `RemoteStorageInterface`
