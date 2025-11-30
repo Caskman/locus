@@ -1,6 +1,5 @@
 # Domain Layer Specification (Phase 2)
 
-**Status:** Draft
 **Related Requirements:** [Process Definition](../process_implementation_definition.md), [Android Architecture](../android_architecture.md)
 
 This document defines the business logic, state management, and data contracts for the Locus application, strictly separated from the Android Framework (UI/Services) and Data Layer (Room/Retrofit).
@@ -8,7 +7,7 @@ This document defines the business logic, state management, and data contracts f
 ## 1. Architecture Principles
 
 *   **Pure Kotlin:** The Domain Layer must be purely Kotlin code with **zero** dependencies on `android.*` (except generic types if absolutely necessary, but preferably none).
-*   **Reactive:** Data streams are exposed as `Flow<T>`. One-shot operations use `suspend` functions.
+*   **Reactive:** Data streams are exposed as `Flow<T>`. One-shot operations (single request-response interactions) use `suspend` functions.
 *   **Result Pattern:** All operations that can fail must return a sealed `Result<T>` wrapper, never throwing unchecked exceptions.
 *   **Use Cases:** Complex logic involving multiple repositories or specific business rules is encapsulated in "Use Case" classes.
 
