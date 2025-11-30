@@ -87,14 +87,15 @@ graph TD
 **Components:**
 *   **Map View:** Full-screen `osmdroid` view.
 *   **Controls:** Standard pinch-to-zoom gestures AND on-screen Zoom Buttons (+/-) for accessibility.
-*   **Date Selector:** Displays the current date. Tapping it opens a collapsible/pop-out calendar view to select other dates. This maximizes map visibility.
+*   **Date Selector:** Displays the current date. Tapping it opens a **Standard Modal Date Picker** (Material Dialog).
+    *   *Rationale:* Better accessibility support (screen readers, keyboard traversal) than custom collapsible views.
 *   **Layer Switcher (Overlay):** Toggle "Signal Heatmap", "Satellite", etc.
 *   **Summary Card (Bottom Sheet):** Persistent summary of the selected day (Distance, Duration). Expands to show details.
 
 **ASCII Wireframe:**
 ```text
 +--------------------------------------------------+
-|  [ October 4, 2023 (v) ]                [Today]  |  <-- Date Selector (Pop-out)
+|  [ October 4, 2023 (v) ]                [Today]  |  <-- Date Selector (Opens Modal)
 +--------------------------------------------------+
 |                                         [Layers] |  <-- Layer Switcher Overlay
 |               ( Map Area )                       |
