@@ -38,6 +38,7 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
     *   **Stationary Manager:**
         *   **Primary:** Significant Motion Sensor (`TYPE_SIGNIFICANT_MOTION`). This is a specific hardware interrupt that wakes the Application Processor (AP) from suspend only when movement is detected, avoiding the battery cost of continuous polling.
         *   **Fallback:** Periodic Burst Sampling (if hardware sensor is missing). The system uses `AlarmManager` to wake the CPU every few minutes (e.g., 5 minutes), samples the accelerometer at 10Hz for a short burst (e.g., 5 seconds), and resumes active tracking if variance exceeds a threshold.
+        *   **Restriction:** While Battery < 3% (Critical), Periodic Burst Sampling is disabled to maximize survival (Deep Sleep).
     *   **Passive Heartbeat:** Uses `AlarmManager` to wake once per hour and write a current timestamp to SharedPreferences, proving to the Watchdog that the service thread is alive and not deadlocked.
     *   **Battery Monitor:** BroadcastReceiver to trigger "Battery Safety Protocol" state changes.
 *   **Output:** Writes raw `Location` objects to the local Room Database (Android's standard SQLite abstraction library).
