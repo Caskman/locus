@@ -112,7 +112,10 @@ flowchart LR
 **Interface:** `InfrastructureProvisioner`
 
 *   **Deploy Stack:**
-    *   **Call:** `CreateStack` (or `UpdateStack` for recovery).
+    *   **Call:** `CreateStack`.
+    *   **Logic:**
+        *   Attempt to create the stack.
+        *   If `AlreadyExistsException` is thrown (Recovery/Reinstall), strictly catch it and proceed to **Polling** (to ensure the existing stack is complete).
     *   **Parameters:**
         *   `StackName`: User-provided device name.
         *   `TemplateBody`: The YAML content of `locus-stack.yaml` (bundled in assets).
