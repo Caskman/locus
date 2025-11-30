@@ -87,15 +87,13 @@ graph TD
 **Components:**
 *   **Map View:** Full-screen `osmdroid` view.
 *   **Controls:** Standard pinch-to-zoom gestures AND on-screen Zoom Buttons (+/-) for accessibility.
-*   **Date Selector:** Displays the current date. Tapping it opens a **Standard Modal Date Picker** (Material Dialog).
-    *   *Rationale:* Better accessibility support (screen readers, keyboard traversal) than custom collapsible views.
 *   **Layer Switcher (Overlay):** Toggle "Signal Heatmap", "Satellite", etc.
-*   **Summary Card (Bottom Sheet):** Persistent summary of the selected day (Distance, Duration). Expands to show details.
+*   **Summary Card (Bottom Sheet):** Persistent summary of the selected day.
+    *   *Date Interaction:* The Date text is a clickable touch target (min 48x48dp) that opens the **Standard Modal Date Picker**.
+    *   *Accessibility:* Must have a clear Content Description (e.g., "Change Date, current is Oct 4").
 
 **ASCII Wireframe:**
 ```text
-+--------------------------------------------------+
-|  [ October 4, 2023 (v) ]                [Today]  |  <-- Date Selector (Opens Modal)
 +--------------------------------------------------+
 |                                         [Layers] |  <-- Layer Switcher Overlay
 |               ( Map Area )                       |
@@ -106,7 +104,7 @@ graph TD
 |         . . . . . . . . . . .                    |
 |                                                  |
 +--------------------------------------------------+
-|  October 4, 2023                                 |  <-- Bottom Sheet (Collapsed)
+|  [ October 4, 2023 (v) ]                         |  <-- Clickable Date (Opens Modal)
 |  12.4 km  •  4h 20m  •  24 km/h avg              |
 +--------------------------------------------------+
 | [Dashboard]   [Map]      Logs      Settings      |
