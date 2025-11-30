@@ -87,15 +87,17 @@ graph TD
 **Components:**
 *   **Map View:** Full-screen `osmdroid` view.
 *   **Controls:** Standard pinch-to-zoom gestures AND on-screen Zoom Buttons (+/-) for accessibility.
+*   **Actions:** "Share/Snapshot" button to export the current view as an image.
 *   **Layer Switcher (Overlay):** Toggle "Signal Heatmap", "Satellite", etc.
 *   **Summary Card (Bottom Sheet):** Persistent summary of the selected day.
+    *   *Height:* Minimized by default to show only essential stats, maximizing map area.
     *   *Date Interaction:* The Date text is a clickable touch target (min 48x48dp) that opens the **Standard Modal Date Picker**.
     *   *Accessibility:* Must have a clear Content Description (e.g., "Change Date, current is Oct 4").
 
 **ASCII Wireframe:**
 ```text
 +--------------------------------------------------+
-|                                         [Layers] |  <-- Layer Switcher Overlay
+|                                [Share]  [Layers] |  <-- Action Overlays
 |               ( Map Area )                       |
 |         . . . . . . . . . . .                    |
 |         .                   .                    |
@@ -166,14 +168,49 @@ graph TD
 +--------------------------------------------------+
 ```
 
+### 3.5. Settings
+**Purpose:** Manage configuration, identity, and application behavior.
+
+**Components:**
+*   **Identity:** Display current "Device ID" and "AWS Stack Name".
+*   **Preferences:** Toggles for "Unit System" (Metric/Imperial), "Theme" (System/Light/Dark).
+*   **Danger Zone:** "Unlink Device", "Clear Local Buffer".
+*   **About:** Version info and link to source code.
+
+**ASCII Wireframe:**
+```text
++--------------------------------------------------+
+|  Settings                                        |
++--------------------------------------------------+
+|  Identity                                        |
+|  Device: Pixel7 (Locus-Pixel7)                   |
+|  ----------------------------------------------  |
+|  General                                         |
+|  [x] Dark Mode                                   |
+|  [ ] Metric Units (km)                           |
+|  ----------------------------------------------  |
+|  Data                                            |
+|  [ Force Upload (Manual Sync) ]                  |
+|  [ Clear Local Cache ]                           |
+|  ----------------------------------------------  |
+|  Version 1.0.0 (12)                              |
++--------------------------------------------------+
+```
+
 ## 4. Feedback Mechanisms
 
 ### 4.1. Persistent Notification
-*   **Format:** `[Recording Status] • [Sync Status]`
-*   **Examples:**
-    *   `Tracking (High Accuracy) • Synced`
-    *   `Tracking (Offline) • Buffered: 140 pts`
-    *   `Paused: Low Battery • Synced`
+**Purpose:** Keep the service alive and provide status without opening the app.
+**Format:** `[Recording Status] • [Sync Status]`
+
+**ASCII Wireframe:**
+```text
++--------------------------------------------------+
+|  (Locus Icon)  Locus • Recording                 |
+|  Tracking (High Accuracy) • Synced               |
+|  [ STOP TRACKING ]                               |  <-- Action Button
++--------------------------------------------------+
+```
 
 ### 4.2. In-App Feedback
 *   **Toast:** Used only for simple confirmations (e.g., "Sync Complete").
@@ -182,7 +219,8 @@ graph TD
 
 ### 4.3. Map Overlays
 *   **Visual Discontinuity:** Track lines must break if the time gap > 5 minutes.
-*   **Signal Quality:** When the "Heatmap" layer is active, the map displays a **True Heat Map Overlay** (gradient cloud) where opacity/intensity increases with signal strength, separate from the track line itself.
+*   **Signal Quality:** When the "Heatmap" layer is active, the map displays a **True Heat Map Overlay** (gradient cloud).
+    *   **No Data:** Areas with *no* signal data must display a **Neutral Low-Gradient Cloud** (e.g., Gray mist) to visually distinguish "Unknown" from "Weak Signal" (Red) or "Strong Signal" (Green).
 
 ## 5. Accessibility (A11y) Requirements
 *   **Touch Targets:** All interactive elements (FABs, Calendar dates) must be at least **48x48dp**.
