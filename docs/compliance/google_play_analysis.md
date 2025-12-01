@@ -57,6 +57,15 @@ This document analyzes the Locus application architecture, user flows, and permi
 *   **Evaluation:** Check if `setWindow` or `setRepeating` (inexact) suffices. If "Watchdog" requires exact timing, justify it as a "Time-critical" function, though this is weak for a tracker.
 *   **Recommendation:** Prefer `WorkManager` for reliability over exact alarms where possible, or accept inexact timing for the watchdog.
 
+### 1.7. Competitor Comparison: Google Location History
+**Context:** Reviewers may ask, "Why do you need this when Google Maps already does it?"
+**Data Point:**
+*   **Google Location History (Timeline):** In the background, standard Android behavior throttles location updates to "a few times per hour" (approx. every 10-15 minutes) or relies on significant motion changes. It prioritizes battery over precision, often relying on WiFi/Cell towers (100m+ accuracy).
+*   **Locus:** Records at **1Hz (1 second)** intervals using a Foreground Service with High Accuracy GPS.
+**Justification Strategy:**
+*   **Differentiation:** Explicitly state in the Play Console declaration that Locus provides *granular* data (speed, exact path, cornering) that Google Timeline misses.
+*   **Use Case:** "Travel logging, photography geotagging, and speed analysis requiring second-by-second precision unavailable in standard operating system history."
+
 ## 2. Recommendation Checklist
 
 1.  [ ] **Implement Prominent Disclosure:** Create a specific UI screen before the permission request.
