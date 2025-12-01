@@ -61,36 +61,6 @@ graph TD
 +--------------------------------------------------+
 ```
 
-### 1.5. Permission Rationale
-**Purpose:** Explain the necessity of "Always Allow" location permissions before triggering the system dialogs. This improves approval rates and clarifies intent.
-
-**Components:**
-*   **Icon:** Location/Map icon.
-*   **Title:** "Locus needs to track you."
-*   **Body:** "To build your history, Locus needs to access your location in the background, even when the app is closed. This data is stored only on your phone and your private S3 bucket."
-*   **Action:** "Continue" (Triggers System Dialogs).
-
-**ASCII Wireframe:**
-```text
-+--------------------------------------------------+
-|                                                  |
-|                ( Location Icon )                 |
-|                                                  |
-|            Location Access Required              |
-|                                                  |
-|  Locus runs in the background to record your     |
-|  journey.                                        |
-|                                                  |
-|  We need you to select "Allow all the time"      |
-|  in the next step to ensure gaps don't appear    |
-|  in your history.                                |
-|                                                  |
-+--------------------------------------------------+
-|                                                  |
-|           [      CONTINUE      ]                 |
-+--------------------------------------------------+
-```
-
 ### 2.2. Key Generation Guide (Bottom Sheet)
 **Trigger:** Tapping "How to generate AWS Keys" on the Welcome Screen.
 **Purpose:** Step-by-step instructions for users to generate temporary keys via CloudShell.
@@ -278,7 +248,7 @@ graph TD
 |       Infrastructure deployed successfully.      |
 |                                                  |
 +--------------------------------------------------+
-|         [ GO TO DASHBOARD ]                      |
+|         [ GO TO NEXT STEP ]                      |
 +--------------------------------------------------+
 ```
 
@@ -297,5 +267,35 @@ graph TD
 |                                                  |
 +--------------------------------------------------+
 |             [ RETRY ]                            |
++--------------------------------------------------+
+```
+
+### 2.8. Permission Rationale
+**Purpose:** Explain the necessity of "Always Allow" location permissions before triggering the system dialogs. This improves approval rates and clarifies intent.
+
+**Components:**
+*   **Icon:** Location/Map icon.
+*   **Title:** "Enable Location Tracking"
+*   **Body:** "To build your history, Locus needs to access your location in the background, even when the app is closed. This data is stored only on your phone and your private S3 bucket."
+*   **Action:** "Continue" (Triggers System Dialogs).
+
+**ASCII Wireframe:**
+```text
++--------------------------------------------------+
+|                                                  |
+|                ( Location Icon )                 |
+|                                                  |
+|            Enable Location Tracking              |
+|                                                  |
+|  Locus runs in the background to record your     |
+|  journey.                                        |
+|                                                  |
+|  We need you to select "Allow all the time"      |
+|  in the next step to ensure gaps don't appear    |
+|  in your history.                                |
+|                                                  |
++--------------------------------------------------+
+|                                                  |
+|           [      CONTINUE      ]                 |
 +--------------------------------------------------+
 ```
