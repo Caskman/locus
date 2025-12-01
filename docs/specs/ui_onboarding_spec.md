@@ -11,6 +11,8 @@ The onboarding process guides the user from a fresh install to a fully provision
 ```mermaid
 graph TD
     Start((Launch)) --> Welcome[Welcome Screen]
+    Welcome --> Guide[Key Gen Guide]
+    Guide --> Welcome
     Welcome --> Creds[Credential Entry]
     Creds --> Valid{Credentials Valid?}
     Valid -- No --> Creds
@@ -55,7 +57,31 @@ graph TD
 +--------------------------------------------------+
 ```
 
-### 2.2. Credential Entry
+### 2.2. Key Generation Guide (Bottom Sheet)
+**Purpose:** Step-by-step instructions for users to generate temporary keys via CloudShell.
+
+**Components:**
+*   **Step 1:** "Log in to AWS Console."
+*   **Step 2:** "Open CloudShell (Terminal Icon)."
+*   **Step 3:** "Paste this command:" (Copy Button).
+    *   `aws sts get-session-token --duration-seconds 3600`
+*   **Step 4:** "Copy the output JSON."
+
+**ASCII Wireframe:**
+```text
++--------------------------------------------------+
+|  How to generate keys                            |
+|                                                  |
+|  1. Open AWS CloudShell.                         |
+|  2. Run this command:                            |
+|     [ aws sts get-session-token ... ] (Copy)     |
+|  3. Copy the output values.                      |
+|                                                  |
+|           [ CLOSE ]                              |
++--------------------------------------------------+
+```
+
+### 2.3. Credential Entry
 **Purpose:** Collect AWS credentials to bootstrap the connection.
 
 **Components:**
@@ -86,7 +112,7 @@ graph TD
 +--------------------------------------------------+
 ```
 
-### 2.3. Choice Screen
+### 2.4. Choice Screen
 **Purpose:** Determine if this is a new installation or a recovery of an existing one.
 
 **Components:**
@@ -118,7 +144,7 @@ graph TD
 +--------------------------------------------------+
 ```
 
-### 2.4. Path A: New Device Setup
+### 2.5. Path A: New Device Setup
 **Purpose:** Define the device identity and deploy infrastructure.
 
 **Components:**
@@ -144,7 +170,7 @@ graph TD
 +--------------------------------------------------+
 ```
 
-### 2.5. Path B: Recovery (Link Store)
+### 2.6. Path B: Recovery (Link Store)
 **Purpose:** Select an existing Locus store to link.
 
 **Components:**
@@ -169,12 +195,21 @@ graph TD
 +--------------------------------------------------+
 ```
 
-### 2.6. Provisioning (Progress)
+### 2.7. Provisioning (Progress)
 **Purpose:** Visual feedback during long-running CloudFormation tasks.
 
+**Displayed Steps:**
+1.  **"Validating CloudFormation Template..."** (Upload & Check)
+2.  **"Creating Storage Stack..."** (S3 Buckets & Encryption)
+3.  **"Waiting for Infrastructure..."** (Poll Stack Status)
+4.  **"Configuring IAM User..."** (Create LocusUser)
+5.  **"Generating Runtime Keys..."** (Create Access Key)
+6.  **"Finalizing Setup..."** (Save Keys, Delete Bootstrap)
+
 **Components:**
-*   **Progress Indicator:** Linear or Circular progress.
-*   **Status Text:** "Provisioning Resources...", "Creating IAM User...", "Success!".
+*   **Progress Indicator:** Linear progress bar (determinate based on step count).
+*   **Current Step:** Text description of the active task.
+*   **Log Window (Optional/Expandable):** Detailed output for debugging.
 
 **ASCII Wireframe:**
 ```text
@@ -183,10 +218,11 @@ graph TD
 |                                                  |
 |            ( Cloud Processing Icon )             |
 |                                                  |
-|           Provisioning Infrastructure...         |
-|           [===========       ] 60%               |
+|           Configuring IAM User...                |
+|           [==================  ] 4/6             |
 |                                                  |
-|           Creating IAM User...                   |
+|           (v) Storage Stack Created              |
+|           (v) Validated Template                 |
 |                                                  |
 +--------------------------------------------------+
 ```
