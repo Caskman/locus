@@ -58,6 +58,7 @@ graph TD
 ```
 
 ### 2.2. Key Generation Guide (Bottom Sheet)
+**Trigger:** Tapping "How to generate AWS Keys" on the Welcome Screen.
 **Purpose:** Step-by-step instructions for users to generate temporary keys via CloudShell.
 
 **Components:**
@@ -66,6 +67,7 @@ graph TD
 *   **Step 3:** "Paste this command:" (Copy Button).
     *   `aws sts get-session-token --duration-seconds 3600`
 *   **Step 4:** "Copy the output JSON."
+*   **Security Note:** "These keys expire in 1 hour. For maximum security, ensure your Console User uses the **Locus Bootstrap Policy**." (Link to Policy JSON).
 
 **ASCII Wireframe:**
 ```text
@@ -199,12 +201,12 @@ graph TD
 **Purpose:** Visual feedback during long-running CloudFormation tasks.
 
 **Displayed Steps:**
-1.  **"Validating CloudFormation Template..."** (Upload & Check)
-2.  **"Creating Storage Stack..."** (S3 Buckets & Encryption)
-3.  **"Waiting for Infrastructure..."** (Poll Stack Status)
-4.  **"Configuring IAM User..."** (Create LocusUser)
-5.  **"Generating Runtime Keys..."** (Create Access Key)
-6.  **"Finalizing Setup..."** (Save Keys, Delete Bootstrap)
+*   *Note: These steps correspond to the resources defined in `locus-stack.yaml`.*
+1.  **"Validating CloudFormation Template..."** (Client-side validation & S3 Upload)
+2.  **"Creating Storage Stack..."** (Initiate CloudFormation Stack Creation)
+3.  **"Provisioning Resources..."** (AWS creating S3 Buckets, IAM User, & Policies)
+4.  **"Generating Runtime Keys..."** (Retrieving `AccessKey` from Stack Outputs)
+5.  **"Finalizing Setup..."** (Saving Runtime Keys to Keystore, Deleting Bootstrap Keys)
 
 **Components:**
 *   **Progress Indicator:** Linear progress bar (determinate based on step count).
