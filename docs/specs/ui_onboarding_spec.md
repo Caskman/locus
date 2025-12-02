@@ -238,7 +238,7 @@ graph TD
 **Purpose:** Request the initial "While Using" location permission. This is the prerequisite for background access on Android 11+.
 
 **Components:**
-*   **Icon:** Location/Map icon.
+*   **Icon:** Standard Material Symbol: `location_on`.
 *   **Title:** "Step 1: Enable Tracking"
 *   **Body:** "Locus needs to access your location to record your journey."
 *   **Action:** "Continue" (Triggers System Dialog: "While Using").
@@ -247,7 +247,7 @@ graph TD
 ```text
 +--------------------------------------------------+
 |                                                  |
-|                ( Location Icon )                 |
+|          ( Icon: location_on )                   |
 |                                                  |
 |            Step 1: Enable Tracking               |
 |                                                  |
@@ -267,7 +267,7 @@ graph TD
 **Purpose:** Explain the necessity of "Always Allow" location permissions before redirecting to settings (Android 11+).
 
 **Components:**
-*   **Icon:** Location/Map icon (perhaps with a 'Background' or 'Zzz' badge).
+*   **Icon:** Standard Material Symbol: `location_on` (or a variation indicating background).
 *   **Title:** "Step 2: Enable Background"
 *   **Body:** "To prevent gaps in your history when the screen is off, Locus needs 'Always Allow' access."
 *   **Action:** "Open Settings" (Triggers System Settings).
@@ -276,7 +276,7 @@ graph TD
 ```text
 +--------------------------------------------------+
 |                                                  |
-|            ( Location + Moon Icon )              |
+|          ( Icon: location_on + badge )           |
 |                                                  |
 |            Step 2: Enable Background             |
 |                                                  |
@@ -297,6 +297,7 @@ graph TD
 
 **Behavior:**
 *   **Trigger:** User denies permissions or returns from settings without granting "Always Allow".
+*   **Immediacy:** This blocking state triggers *immediately* upon returning to the app if the required permission is not granted.
 *   **State:** The screen transitions to this blocking state.
 *   **Action:** "Open Settings" is the *only* available action.
 
@@ -304,7 +305,7 @@ graph TD
 ```text
 +--------------------------------------------------+
 |                                                  |
-|           ( Critical Alert Icon )                |
+|          ( Icon: error / warning )               |
 |                                                  |
 |             Permission Required                  |
 |                                                  |
@@ -326,7 +327,7 @@ graph TD
 ```text
 +--------------------------------------------------+
 |                                                  |
-|            ( Checkmark Icon )                    |
+|            ( Icon: check_circle )                |
 |                                                  |
 |               You're all set!                    |
 |                                                  |
