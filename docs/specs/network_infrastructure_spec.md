@@ -170,11 +170,29 @@ sequenceDiagram
     *   **Call:** `GetObject`.
     *   **Processing:** Stream `body` -> `GZIPInputStream` -> `BufferedReader` -> `Json.decodeFromString`.
 
-## 5. Community Telemetry (Optional)
+## 5. Traffic Control & Cost Safety
+
+To prevent runaway costs (AWS Bill) due to implementation bugs or retry loops, the Network Layer must strictly enforce a **Traffic Guardrail**.
+
+### 5.1. Daily Data Cap
+*   **Limit:** **50MB per day** (Soft Cap).
+    *   *Rationale:* 1Hz tracking produces ~2-5MB/day compressed. 50MB allows for history sync but blocks infinite loops.
+*   **Mechanism:**
+    *   The `NetworkModule` maintains a persistent `DailyTransferStats` counter (stored in SharedPreferences, reset at midnight).
+    *   Every `PutObject` or `GetObject` call increments this counter *before* execution.
+
+### 5.2. Circuit Breaker Logic
+*   **IF** `DailyTransferStats > 50MB`:
+    *   **THEN** Throw `TrafficLimitExceededException`.
+    *   **Effect:** All background `WorkManager` jobs (Sync, Diagnostics) will fail and back off.
+    *   **Notification:** The exception must be caught by the Domain Layer to trigger a specific User Notification: *"Daily Data Limit Reached. Sync Paused."*
+*   **Override:** User-initiated actions (e.g., "Force Sync Now" or "Restore History") explicitly bypass this check.
+
+## 6. Community Telemetry (Optional)
 
 This module handles the optional upload of anonymous crash reports.
 
-### 5.1. Interface
+### 6.1. Interface
 ```kotlin
 interface CommunityTelemetryRemote {
     suspend fun uploadCrashReport(report: CrashReportDto): Result<Unit>
@@ -182,7 +200,7 @@ interface CommunityTelemetryRemote {
 }
 ```
 
-### 5.2. Implementation Variants (Flavors)
+### 6.2. Implementation Variants (Flavors)
 
 *   **`standard` Flavor:**
     *   **Library:** Retrofit + OkHttp.
@@ -194,19 +212,20 @@ interface CommunityTelemetryRemote {
     *   **Implementation:** No-Op (Stub).
     *   **Logic:** Immediately returns `Result.Success` (or `Result.Failure` with "Disabled" message, handled gracefully by domain).
 
-## 6. Hilt Modules
+## 7. Hilt Modules
 
-### 6.1. `NetworkModule` (InstallIn: SingletonComponent)
+### 7.1. `NetworkModule` (InstallIn: SingletonComponent)
 *   Provides: `Json` (kotlinx configuration), `OkHttpClient` (shared configuration).
+*   Provides: `TrafficStatsRepository` (for Cost Safety).
 
-### 6.2. `BootstrapModule` (InstallIn: ViewModelComponent)
+### 7.2. `BootstrapModule` (InstallIn: ViewModelComponent)
 *   Provides: `CloudFormationClient` (Scoped to Onboarding).
 
-### 6.3. `RuntimeModule` (InstallIn: SingletonComponent)
+### 7.3. `RuntimeModule` (InstallIn: SingletonComponent)
 *   Provides: `S3Client`, `CommunityTelemetryRemote`.
 *   **Note:** `S3Client` provider must lazily check for credentials. If credentials are missing (not yet set up), it should defer creation or throw a specific initialization error caught by the repository.
 
-## 7. Security Considerations
+## 8. Security Considerations
 
 *   **TLS:** All connections use HTTPS (enforced by AWS SDK and Android default network security config).
 *   **Memory:** Bootstrap credentials must be passed to the client builder and then explicitly cleared/nullified in the UI layer once the process is complete.

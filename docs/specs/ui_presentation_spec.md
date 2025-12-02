@@ -165,6 +165,10 @@ graph TD
 **Components:**
 *   **Identity:** Display current "Device ID" and "AWS Stack Name".
 *   **Preferences:** Toggles for "Unit System" (Metric/Imperial), "Theme" (System/Light/Dark).
+*   **Telemetry Transparency:**
+    *   **Toggle:** "Share Anonymous Crash Reports" (Opt-In).
+    *   **Action:** "Preview Data" (Button).
+        *   *Behavior:* Opens a modal or dialog showing a sample JSON payload containing the real Salted ID. Allows the user to verify anonymity before opting in.
 *   **Danger Zone:**
     *   "Unlink Device"
     *   "Clear Local Buffer" (Red Text). *Warning:* Tapping this immediately deletes all unsynced data from the device. This action is irreversible and causes **Data Loss**.
@@ -178,13 +182,13 @@ graph TD
 |  Identity                                        |
 |  Device: Pixel7 (Locus-Pixel7)                   |
 |  ----------------------------------------------  |
-|  General                                         |
-|  [x] Dark Mode                                   |
-|  [ ] Metric Units (km)                           |
+|  Privacy & Telemetry                             |
+|  [ ] Share Anonymous Crash Reports               |
+|  [ Preview Data Payload ]                        | <--- New Transparency Feature
 |  ----------------------------------------------  |
 |  Data (Danger Zone)                              |
 |  [ Force Upload (Manual Sync) ]                  |
-|  [ Clear Local Cache (!) ]                       | <--- Triggers Confirmation Dialog
+|  [ Clear Local Cache (!) ]                       |
 |  ----------------------------------------------  |
 |  Version 1.0.0 (12)                              |
 +--------------------------------------------------+
@@ -210,7 +214,15 @@ graph TD
 *   **Snackbar:** Used for transient warnings or actionable info (e.g., "Network Timeout - Retrying... [Retry Now]").
 *   **Dialogs:** Reserved strictly for **Tier 3 Fatal Errors** or destructive confirmations (e.g., "Delete History").
 
-### 4.3. Map Overlays
+### 4.3. Actionable Error Dialogs (Infrastructure Diagnosis)
+*   **Purpose:** Guide the user to resolve external infrastructure issues (S3) without requiring app updates.
+*   **Trigger:** Triggered by specific AWS Error Codes (mapped in Domain Layer).
+*   **Content:**
+    *   **Title:** Clear, layman-friendly error name (e.g., "Bucket Not Found" instead of "404 NoSuchBucket").
+    *   **Body:** Specific instruction (e.g., "It looks like your S3 bucket was deleted. Please check the AWS Console.").
+    *   **Action:** "Open AWS Console" (Deep Link) or "Retry".
+
+### 4.4. Map Overlays
 *   **Visual Discontinuity:** Track lines must break if the time gap > 5 minutes.
 *   **Signal Quality:** When the "Heatmap" layer is active, the map displays a **True Heat Map Overlay** (gradient cloud).
     *   **No Data:** Areas with *no* signal data must display a **Neutral Low-Gradient Cloud** (e.g., Gray mist) to visually distinguish "Unknown" from "Weak Signal" (Red) or "Strong Signal" (Green).

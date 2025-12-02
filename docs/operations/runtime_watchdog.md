@@ -9,6 +9,7 @@ The Watchdog operates on a periodic schedule (e.g., every 15 minutes) via `WorkM
 1.  **Service State (Zombie Check):** IF `TrackingState` is `RECORDING`, THEN `LocationService` must be `RUNNING` AND `LastHeartbeatTimestamp` must be < 90 minutes old.
 2.  **Permission Integrity:** IF `TrackingState` is `RECORDING`, THEN `ACCESS_BACKGROUND_LOCATION` must be `GRANTED`.
 3.  **Upload Health:** IF `BufferAge` > 4 hours AND `Network` is `CONNECTED` AND `Battery` > 15%, THEN `LastUploadTimestamp` must be < 1 hour ago.
+4.  **Infrastructure Health:** Check for persistent network failures that indicate a user-fixable infrastructure problem.
 
 ## 2. Recovery Actions
 
@@ -20,6 +21,7 @@ If an invariant is violated, the Watchdog executes a graded response:
 | **Permissions Lost** | Stop Tracking, Set State `PAUSED` | **Tier 3 Fatal Error:** "Tracking Stopped: Permission Revoked" (Sound/Vibration) |
 | **Upload Stuck** | Trigger "Manual Sync" Logic | None (Silent Retry) |
 | **Service Start Fail** | Increment Fail Count (Circuit Breaker) | None (Until 3 Strikes) |
+| **Infrastructure Error** | Trigger Diagnosis Logic | **Actionable Error Dialog** (Once per 24h) |
 
 ## 3. Implementation Details
 
@@ -50,6 +52,14 @@ To prevent infinite restart loops when a fatal bug exists:
     *   **Stop Retrying.**
     *   **Action:** Trigger **Tier 3 Fatal Error**: "Tracking Failed: Service Unstable."
 5.  **Reset Condition:** The Circuit Breaker is reset to Closed (0) **only** when the user manually opens the application or toggles tracking, acknowledging the error.
+
+### 3.4. Infrastructure Diagnosis Layer
+When `Upload Health` checks fail repeatedly, the Watchdog performs a specific "Infrastructure Probe" to diagnose S3 issues.
+*   **Logic:** Map standard AWS S3 Exceptions to User-Actionable States.
+    *   `404 NoSuchBucket` -> **State:** `BUCKET_MISSING` -> **Advice:** "Bucket not found. Check Console."
+    *   `403 AccessDenied` -> **State:** `AUTH_REVOKED` -> **Advice:** "Access denied. Check IAM User."
+    *   `403 AccountProblem` -> **State:** `BILLING_SUSPENDED` -> **Advice:** "AWS Account suspended. Check Billing."
+*   **Suppression:** To avoid spamming the user, this check runs at most **Once every 24 hours** unless manually triggered.
 
 ## 4. Telemetry Integration
 

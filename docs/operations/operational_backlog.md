@@ -21,6 +21,7 @@ This document lists operational topics that have been identified as necessary bu
 **Scope:**
 *   **Bulk Export:** How to download all tracks for a specific year/month using the AWS CLI.
 *   **Manual Deletion:** Safe procedures for deleting specific history ranges (e.g., "Prune data older than 2020").
+    *   *Note:* The Locus app does not implement "Delete" permissions for safety. This guide is the **official** method for data removal.
 *   **Backup & Restore:** Strategies for backing up the S3 bucket to a local drive or another cloud provider ("Exit Strategy").
 
 ## 4. Security Operations (SecOps)
@@ -36,3 +37,10 @@ This document lists operational topics that have been identified as necessary bu
 *   **Battery Drain Analysis:** How to correlate "Wake Lock" duration logs with battery usage.
 *   **Network Efficiency:** Analyzing the ratio of "Successful Uploads" vs. "Failed/Retried Uploads."
 *   **Latency Monitoring:** Understanding S3 put/get latencies from the device perspective.
+
+## 6. Advanced Monitoring (Dead Man's Switch)
+**Goal:** Configure external AWS monitoring to alert the user if the "Locus" system stops receiving data (e.g., phone stolen/broken).
+**Scope:**
+*   **CloudWatch Alarm:** Instructions for creating an alarm on the S3 bucket's "PutRequests" metric (Trigger if Sum < 1 for 24 hours).
+*   **SNS Notification:** Instructions for subscribing an email address to the alarm.
+*   **Cost Implications:** Explicit warning about the additional cost of CloudWatch Alarms (~$0.10/month) and SNS.
