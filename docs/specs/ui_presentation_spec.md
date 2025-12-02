@@ -11,6 +11,7 @@ This document defines the user interface architecture, navigation flows, and vis
 *   **Theme:** Fully supported **Light** and **Dark** modes, respecting the system-wide setting by default.
 *   **Typography:** Use the standard Material Type Scale (Headline, Title, Body, Label) with support for Dynamic Type (system font scaling).
 *   **Iconography:** Filled icons for active states, outlined icons for inactive states (Material Symbols).
+*   **Splash Screen:** The application must implement the **Android 12+ SplashScreen API** to provide a seamless launch experience, displaying the Locus logo on a system-adaptive background.
 
 ### 1.2. Philosophy: "Subtle by Default"
 *   **Notification:** The Persistent Notification is the primary status indicator outside the app. It must never beep or vibrate unless a **Fatal Error** occurs.
@@ -55,14 +56,16 @@ graph TD
 **Layout Behavior:**
 *   **Phone (Portrait):** Scrollable Column. Status Card pinned to top.
 *   **Phone (Landscape):** Scrollable Column (Standard).
-*   **Tablet/Large Screen (Landscape > 600dp):** Two-pane layout. Status Card (Left Pane) fixed, Stats & History (Right Pane) scrollable.
+*   **Tablet/Large Screen (Landscape > 600dp):** Two-pane layout.
+    *   **Left Pane (Fixed Width):** Status Card and **"Sync Now" Action Button**. This acts as the control panel.
+    *   **Right Pane (Scrollable):** Stats Grid and Recent Activity history.
 
 **Components:**
 *   **Status Card:** A prominent card mirroring the Persistent Notification state. Handles "Active", "Error", and "User Stopped" states.
 *   **Stats Grid:** "Local Buffer" count, "Last Sync" time, "Next Sync" estimate.
 *   **Actions:** "Sync Now" button.
     *   *Behavior:* When tapped, transforms into a **Linear Progress Indicator** showing "Uploading batch X of Y..." until completion.
-    *   *Error Handling:* Transient failures (e.g., "Network Error") must appear as a **Snackbar** anchored above the bottom navigation.
+    *   *Error Handling:* Transient failures (e.g., "Network Error") must revert the button state and appear as a **Snackbar** anchored above the bottom navigation.
 *   **Sensor Status:** Small indicators for GPS, Network, and Battery state.
     *   *Design:* These must use dynamic **color and icon changes** (e.g., Green Check, Red Alert, Grey Slash) to indicate state, rather than just static text, to ensure quick readability.
 
@@ -97,11 +100,12 @@ graph TD
 |  [ STATUS CARD ]                   |  Buffered: 1,240                   |
 |  Status: Recording                 |  Last Sync: 5 mins ago             |
 |  State:  Synced                    |                                    |
-|  --------------------------------  |  [ SYNC NOW (Cloud Icon) ]         |
-|  [GPS] [Bat] [Wifi]                |                                    |
-|                                    |  Recent Activity                   |
-|  (This pane fixed height/width)    |  - Yesterday: 14km                 |
-|                                    |  - Oct 4: 12km                     |
+|  --------------------------------  |                                    |
+|  [GPS] [Bat] [Wifi]                |  Recent Activity                   |
+|  --------------------------------  |  - Yesterday: 14km                 |
+|  [ SYNC NOW (Cloud Icon) ]         |  - Oct 4: 12km                     |
+|                                    |                                    |
+|  (This pane fixed height/width)    |                                    |
 |                                    |                                    |
 +------------------------------------+------------------------------------+
 | [Dashboard]    Map        Logs       Settings                           |
@@ -146,12 +150,13 @@ graph TD
 
 **Components:**
 *   **Map View:** Full-screen `osmdroid` view.
-    *   *Theme:* **Dark Mode Support:** The map tiles themselves must visually adapt to Dark Mode (e.g., using a dark style or inverted colors) when the system theme is Dark.
+    *   *Theme:* **Dark Mode Support:** The map tiles themselves must visually adapt to Dark Mode using a **Color Filter** (e.g., inversion or dimming matrix) applied to the MapView canvas when the system theme is Dark.
     *   *Performance:* **Downsampling:** The rendered path is visually simplified (e.g., Ramer-Douglas-Peucker) for performance; zooming in reveals more detail.
 *   **Controls:** Standard pinch-to-zoom gestures AND on-screen Zoom Buttons (+/-) for accessibility.
 *   **Actions:** "Share/Snapshot" button to export the current view as an image.
-*   **Layer Switcher (Bottom Sheet):**
+*   **Layer Switcher (Modal Bottom Sheet):**
     *   *Trigger:* FAB or Overlay Button.
+    *   *Behavior:* Opens as a **Modal** Bottom Sheet (distinct from the persistent history sheet).
     *   *Content:* Radio selection for Map Type (Standard, Satellite), Toggles for Overlays (Heatmap).
 *   **Empty State (No History):**
     *   If no data is recorded/selected, Map centers on user location. Bottom Sheet displays "No data recorded today."
@@ -210,6 +215,7 @@ graph TD
 |  [ X ] Close Detail                              |
 |  14:02:15  •  35 km/h  •  Bat: 84%               |
 |  Signal: WiFi (Level 3, -65 dBm)                 |
+|  Altitude: 450m                                  |
 +--------------------------------------------------+
 ```
 
@@ -231,14 +237,17 @@ graph TD
 **Layout Behavior:**
 *   **Sticky Header:** The Filter Chips row remains pinned to the top while the list scrolls.
 *   **Reverse Layout (StackFromBottom):** The `RecyclerView` starts from the bottom (newest items) by default. New entries are appended to the bottom. If the user is at the bottom, it auto-scrolls; if the user has scrolled up, it maintains position.
+*   **Tablet Constraint:** Content restricted to a max-width (e.g., 800dp) and centered.
 
 **Components:**
 *   **Filter Chips:** Multi-select Checkboxes (not Radio buttons) to filter by tag/level.
     *   *Design:* Must be distinctively color-coded (e.g., Error=Red, Warn=Yellow, Net=Blue) to match the corresponding log lines.
     *   *Accessibility:* Colors must meet contrast requirements.
 *   **Log List:** Scrollable list of log entries. Lines are color-coded to match their severity/category.
+    *   *Empty State:* If no logs exist, display "No logs recorded yet."
 *   **Export/Copy:** Action to copy logs or save to file.
     *   *Behavior:* Tapping "Share" exports the **entire raw log buffer** (all lines, unfiltered) as a `.txt` file attachment to ensure full context for debugging.
+    *   *Feedback:* The icon transforms into a **Circular Progress Spinner** while the file is being prepared.
 
 **ASCII Wireframe:**
 ```text
@@ -267,6 +276,7 @@ graph TD
 **Layout Behavior:**
 *   **Grouped List:** Settings are organized into distinct categories (Identity, General, Data) with headers.
 *   **Standard List Items:** Uses standard Material Design list items with switches or chevrons.
+*   **Tablet Constraint:** Content restricted to a max-width (e.g., 600dp) and centered.
 
 **Components:**
 *   **Identity:** Display current "Device ID" and "AWS Stack Name".
@@ -278,6 +288,7 @@ graph TD
     *   "Clear Local Buffer" (Red Text). *Warning:* Tapping this immediately deletes all unsynced data from the device. This action is irreversible and causes **Data Loss**.
     *   "Reset App" (Red Text). *Warning:* Wipes all keys, databases, and preferences. Returns app to "Fresh Install" state (Onboarding).
 *   **About:** Version info and link to source code.
+    *   *Behavior:* External links (e.g., Source Code, Privacy Policy) must open in the system default **External Browser** (e.g., Chrome Custom Tab), not a WebView.
 
 **ASCII Wireframe:**
 ```text
