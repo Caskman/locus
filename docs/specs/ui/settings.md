@@ -20,8 +20,10 @@
         *   *Feedback:* Upon successful completion, display a **Snackbar** ("Local buffer cleared") and revert the button to its enabled state.
     *   "Reset App" (Red Text). *Warning:* Wipes all keys (Runtime Keys in `EncryptedSharedPreferences`), databases, and preferences. Returns app to "Fresh Install" state (Onboarding).
         *   *Feedback:* This action triggers a **Blocking Progress Dialog** ("Resetting Application...") that prevents interaction/exit until the cleanup is complete and the app restarts.
-*   **About:** Version info and link to source code.
-    *   *Behavior:* External links (e.g., Source Code, Privacy Policy) must open in the system default **External Browser** (e.g., Chrome Custom Tab), not a WebView.
+*   **About (Section):** Displayed as a grouped section at the bottom of the main settings list.
+    *   *Structure:* Header ("About") followed by standard list items.
+    *   *Items:* "Version" (e.g., 1.0.0 (12)), "Source Code" (Link).
+    *   *Behavior:* External links (e.g., Source Code) must open in the system default **External Browser** (e.g., Chrome Custom Tab), not a WebView.
 
 ## 3. Wireframes
 
@@ -40,6 +42,8 @@
 |  [ Clear Local Cache (!)      ]                  | <--- Triggers Confirmation Dialog
 |  [ Reset Application (!)      ]                  | <--- Triggers Confirmation Dialog
 |  ----------------------------------------------  |
+|  About                                           |
 |  Version 1.0.0 (12)                              |
+|  Source Code                                 >   |
 +--------------------------------------------------+
 ```

@@ -22,7 +22,7 @@
 *   **Snackbar:** Used for transient warnings or actionable info (e.g., "Network Timeout - Retrying... [Retry Now]").
 *   **Blocking Full-Screen Error:** Reserved for **Tier 3 Fatal Errors** (e.g., Permission Revoked) where the app cannot function.
     *   *Behavior:* This screen appears **only** when the user opens the application (or brings it to the foreground). It does **not** overlay other apps or appear over the lock screen.
-    *   *Rationale UI:* Any runtime permission re-request flows must utilize the **Rationale UI** designs defined in the [Onboarding UI Specification](../ui_onboarding_spec.md) to ensure consistent education.
+    *   *Rationale UI:* Any runtime permission re-request flows must utilize the **Rationale UI** designs defined in the [Onboarding UI Specification](onboarding.md) to ensure consistent education.
 *   **Dialogs:** Reserved strictly for destructive confirmations (e.g., "Delete History").
 
 **Blocking Error Screen (Wireframe):**
