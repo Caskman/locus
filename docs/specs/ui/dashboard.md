@@ -21,10 +21,14 @@
 *   **Actions:** "Sync Now" button.
     *   *Placement:* On phones, this button is placed **below** the Stats Grid (scrolling). On tablets, it is fixed in the Left Pane.
     *   *Behavior:* When tapped, transforms into a **Linear Progress Indicator** showing "Uploading batch X of Y..." until completion.
+    *   *Empty Buffer Behavior:* If the local buffer is empty (0 points), the button remains **enabled**. Tapping it triggers a transient **Snackbar** ("Buffer is empty") to provide immediate system feedback that the command was received but no work is needed.
     *   *Offline Behavior:* If the device is offline, the button remains enabled, but tapping it triggers a "Fail Fast" behavior: a **Snackbar** appears immediately ("No Internet Connection"), and no network request is attempted.
     *   *Error Handling:* Transient failures (e.g., "Network Error" during upload) must revert the button state and appear as a **Snackbar** anchored above the bottom navigation.
 *   **Sensor Status:** Small indicators for GPS, Network, and Battery state.
     *   *Design:* These must use an **Icon + Short Value** format (e.g., [Icon] High, [Icon] 85%) and leverage dynamic **color and icon changes** (e.g., Green Check, Red Alert, Grey Slash) to indicate state.
+*   **Stop Tracking Action:** A secondary action to manually stop the tracking service.
+    *   *Placement:* Located **inside the Status Card** (top right icon button or explicit text button) or immediately below the "Sync Now" button depending on space.
+    *   *Interaction:* Tapping triggers a **Confirmation Dialog** to prevent accidental data gaps.
 *   **Recent Activity:** A simple list showing the last few days of tracking summary (e.g., "Yesterday: 14km").
     *   *Limit:* The list displays a maximum of **5 items** (e.g., the last 5 days with activity).
     *   *Interaction:* Tapping an item in this list navigates the user to the **Map Tab**, pre-loading the selected date.
@@ -38,6 +42,8 @@
 |  [ STATUS CARD ]                                 |
 |  Status: Recording (High Accuracy)               |
 |  State:  Synced                                  |
+|                                                  |
+|           [ STOP TRACKING ] (Outlined)           | <-- Manual Stop Action
 |  ----------------------------------------------  |
 |  [ (Sat) High ]  [ (Bat) 85% ]  [ (Wifi) On ]    | <-- Icon + Text, Colored by State
 +--------------------------------------------------+

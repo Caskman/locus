@@ -23,7 +23,9 @@
 *   **Layer Switcher (Modal Bottom Sheet):**
     *   *Trigger:* FAB or Overlay Button.
     *   *Behavior:* Opens as a **Modal** Bottom Sheet (distinct from the persistent history sheet).
-    *   *Content:* Radio selection for Map Type (Standard, Satellite), Toggles for Overlays (Heatmap).
+    *   *Content:*
+        *   **Map Type:** Radio selection (Standard, Satellite).
+        *   **Signal Overlay:** Radio selection (None, Signal: Cellular, Signal: WiFi). These are mutually exclusive to prevent visual clutter.
 *   **Empty State (No History):**
     *   If no data is recorded/selected, Map centers on user location. Bottom Sheet displays "No data recorded today."
 *   **Empty State (Network Error):**
@@ -36,7 +38,7 @@
         *   *Dynamic Content:* Fields with missing data (e.g., no Altitude or Signal info) must be **hidden completely** (layout collapses) rather than displaying "N/A" or empty values.
     *   **Dismissal:** Users can return to Mode A by tapping the map area, swiping the sheet down, or tapping the Close button.
     *   **Date Interaction:** The Date text is a clickable touch target that opens a **Custom Calendar Picker** (Modal Bottom Sheet).
-        *   *Feature:* The Calendar must display **Data Indicators** (dots) on days that have verified historical data.
+        *   *Feature:* The Calendar must display **Data Indicators** (dots) on days that have **verified (synced)** historical data available in the local cache or S3 index. Unsynced local buffer data is not indicated here.
         *   *Loading State:* While fetching the "data dots" from the local database:
             *   Display an **Indeterminate Progress Indicator** (Spinner/Bar) over the calendar grid.
             *   **Disable** the "Previous Month" and "Next Month" controls to prevent rapid navigation/race conditions.
@@ -45,9 +47,14 @@
 
 ## 3. Map Overlays
 *   **Visual Discontinuity:** Track lines must break if the time gap > 5 minutes.
-*   **Signal Quality:** When the "Heatmap" layer is active, the track line is colored to represent signal strength.
+*   **Signal Quality:** When a signal layer (Cellular or WiFi) is active, the track line is colored to represent signal strength.
     *   **Logic:** See [Heatmap Logic Specification](../logic_heatmap.md).
     *   **No Data:** Areas with *no* signal data (e.g., visual discontinuity gaps) are simply not drawn.
+*   **Rapid Acceleration/Braking Markers:**
+    *   **Trigger:** Events flagged as rapid acceleration or hard braking.
+    *   **Visual:** A **24dp** Icon Marker using the Material Symbol **`speed`**.
+    *   **Color:** **Error/Red** (`MaterialTheme.colorScheme.error`).
+    *   **Interaction:** Clickable; opens Point Detail mode.
 
 ## 4. Wireframes
 

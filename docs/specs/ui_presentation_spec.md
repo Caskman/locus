@@ -32,5 +32,5 @@ This document defines the user interface architecture, navigation flows, and vis
 *   **[Feedback Mechanisms](ui/feedback.md)**
     *   Persistent Notification
     *   In-App Feedback (Snackbars, Dialogs)
-*   **[Onboarding (Setup)](ui_onboarding_spec.md)**
+*   **[Onboarding (Setup)](ui/onboarding.md)**
     *   Detailed flows for Welcome, Credentials, and Recovery.
