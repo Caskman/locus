@@ -28,7 +28,11 @@
 ### 2.2. Filter Chips
 *   **Type:** Multi-select Choice Chips.
 *   **Logic:** Functions as a **Union (OR)** operation. Selecting "Error" and "Warn" displays entries that are *either* Errors *or* Warnings.
-*   **Appearance:** Distinctively color-coded to match log levels (e.g., Error=Red, Warn=Yellow, Net=Blue).
+*   **Levels:** strictly adheres to conventional log levels:
+    *   **Error** (Red)
+    *   **Warn** (Yellow)
+    *   **Info** (Blue)
+    *   **Debug** (Gray)
 *   **Persistence:** Filters **reset to default (Show All)** when leaving the screen.
 
 ### 2.3. Log List
@@ -39,7 +43,10 @@
         *   *Older:* `MMM dd HH:mm`
     *   **Tag:** `[Tag]` in bold/colored text.
     *   **Message:** The log content.
-*   **Pagination Loader:** A small **Circular Progress Spinner** appears at the **top** of the list (history) momentarily when the user scrolls up and triggers a fetch for older logs.
+*   **Infinite Scroll (History):**
+    *   **Behavior:** As the user scrolls up and approaches the top of the currently loaded list, the system **automatically** fetches the next page of older logs.
+    *   **Indicator:** A small **Circular Progress Spinner** appears at the top momentarily during this fetch.
+    *   *Note:* No "Pull to Load" gesture is used; scrolling is seamless.
 *   **Interaction:** Tapping any row opens the **Log Detail Bottom Sheet**.
 
 ### 2.4. Floating Controls
@@ -90,12 +97,12 @@
 +--------------------------------------------------+
 | Logs                        [Search] [Export/Menu]|
 +--------------------------------------------------+
-|  [x] Error   [x] Warn   [ ] Net   [ ] Auth       |  <-- Sticky Header
+|  [x] Error   [x] Warn   [ ] Info   [ ] Debug     |  <-- Sticky Header (Standard Levels)
 +--------------------------------------------------+
 |           (  )  <-- History Loader               |
 |                                                  |
 | ❌ 14:02:10 [Loc] RecordPoint: Acc=12m           |
-| ✅ 14:02:05 [Net] Upload: Success (200 OK)       |
+| ℹ️ 14:02:05 [Net] Upload: Success (200 OK)       |
 | ℹ️ 14:01:55 [S3]  ListObjects: tracks/2023/10    |
 | ⚠️ 14:01:40 [Wtch] Heartbeat: OK                 |
 | ℹ️ Oct 26 14:00 [Bat] Level: 84% (Discharging)   |
