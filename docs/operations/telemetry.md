@@ -98,7 +98,12 @@ To ensure the "Fail-Open" mandate:
     *   **The system shall not** retry immediately (to preserve battery).
     *   **Implicit Retry:** The failed logs **remain in the Local Circular Buffer**. They will naturally be included in the **next scheduled upload batch**, provided they have not been evicted by newer logs (FIFO).
     *   **Trade-off:** This prioritizes battery life over guaranteed delivery. If the buffer overflows before the next successful sync, old logs are dropped.
-3.  **Circuit Breaking:**
+3.  **Partial Failure Strategy:**
+    *   **Scenario:** S3 upload succeeds, but Community (Firebase) upload fails.
+    *   **Resolution:** The data is considered **successfully synced**. The Local Circular Buffer marks the range as uploaded and deletes it to free space.
+    *   **Rationale:** Community telemetry is optional; its failure must not cause local storage bloat or block the deletion of data that is already safely backed up to S3.
+    *   **Inverse:** If S3 fails, the data **remains** in the buffer, regardless of Community success.
+4.  **Circuit Breaking:**
     *   **IF** telemetry uploads fail consecutively for > 5 attempts, **THEN** the Telemetry Module **shall** enter a "Backoff" state for 6 hours.
 
 ## 5. Implementation Definition

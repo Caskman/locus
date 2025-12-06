@@ -6,7 +6,9 @@ This document defines the requirements for the automation scripts used in the Va
 
 ## 1. General Requirements
 
-*   **Language:** All scripts must be written in **Bash** (`.sh`) or **Python 3** (`.py`).
+*   **Language Strategy:** The project enforces a strict "Right Tool for the Job" split:
+    *   **Bash (`.sh`):** Strictly for "Glue Code" (e.g., CI wrappers, simple file operations, invoking Gradle/Git).
+    *   **Python 3 (`.py`):** Strictly for "Logic" (e.g., parsing JSON/XML, complex validation, AWS `boto3` interactions).
 *   **Locality:** Scripts must be executable on a local developer machine (macOS/Linux) without modification.
 *   **Idempotency:** Re-running a script should be safe and deterministic.
 *   **Exit Codes:** Scripts must return `0` for Success and non-zero for Failure.

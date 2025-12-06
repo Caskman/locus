@@ -5,3 +5,7 @@
 *   **Reactive Programming:** Utilize reactive streams for observing data changes in the UI.
 *   **Lifecycle Awareness:** Ensure components are lifecycle-aware to prevent memory leaks and crashes.
 *   **Persistence:** Use the Room persistence library for local data storage and abstraction.
+*   **System Requirements:**
+    *   **Minimum SDK:** API 28 (Android 9.0).
+    *   **Target SDK:** Latest Stable.
+    *   **Language:** Kotlin.

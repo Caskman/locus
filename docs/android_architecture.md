@@ -2,7 +2,12 @@
 
 The Android application acts as both the data collector and the infrastructure controller. It implements the behaviors defined in the Functional Requirements.
 
-## 1. Build Strategy (Privacy & Variants)
+## 1. System Requirements
+*   **Minimum SDK:** API 28 (Android 9.0 Pie).
+*   **Target SDK:** Latest Stable (e.g., API 34).
+*   **Language:** Kotlin (Strict).
+
+## 2. Build Strategy (Privacy & Variants)
 To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (Beta) requirements, the application utilizes **Product Flavors**:
 
 *   **Standard (`standard`):**
@@ -17,7 +22,7 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
     *   **Mechanism:** Uses "No-Op" stubs for the Community Telemetry interface.
     *   **Implication:** FOSS users lose access to "Community Health Stats" (aggregated crash reports and performance metrics, e.g., ANRs) and the "Fused Location Provider" (relying on Raw GPS instead).
 
-## 2. Provisioner (Setup)
+## 3. Provisioner (Setup)
 *   **Role:** Handles the one-time setup and infrastructure creation.
 *   **Components:** UI Wizards, AWS SDK (CloudFormation client).
 *   **Responsibilities:**
@@ -27,7 +32,7 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
     *   Transition to Runtime Keys upon success.
 *   **Implements Requirements:** [Setup & Onboarding](requirements/setup_onboarding.md)
 
-## 3. Tracker Service (The Engine)
+## 4. Tracker Service (The Engine)
 *   **Role:** Performs the "Always-on" data collection.
 *   **Component:** `ForegroundService`.
 *   **Key Mechanisms:**
@@ -44,7 +49,7 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
 *   **Output:** Writes raw `Location` objects to the local Room Database (Android's standard SQLite abstraction library).
 *   **Implements Requirements:** [Data Collection & Tracking](requirements/data_collection.md)
 
-## 4. Reliability Layer (The Watchdog)
+## 5. Reliability Layer (The Watchdog)
 *   **Role:** Ensures the Tracker Service remains active despite aggressive OEM battery optimizations (e.g., Samsung/Huawei killing background processes).
 *   **Component:** `WorkManager` (PeriodicWorkRequest, 15-minute interval).
 *   **Logic:**
@@ -53,7 +58,7 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
     3.  **Circuit Breaker:** If restart fails 3 consecutive times, triggers a "Tracking Failed" Fatal Error notification.
     4.  **Upload Rescue:** If buffer > 4 hours old AND Battery > 15%, triggers a rescue upload.
 
-## 5. Sync & Telemetry Worker (The Uploader)
+## 6. Sync & Telemetry Worker (The Uploader)
 *   **Role:** Handles reliable data transport (Tracks & Logs).
 *   **Component:** `WorkManager` (PeriodicWorkRequest).
 *   **Responsibilities:**
@@ -64,7 +69,7 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
     *   **Transport:** Upload to S3 using the Runtime Keys.
 *   **Implements Requirements:** [Data Storage](requirements/data_storage.md) & [Telemetry](operations/telemetry.md)
 
-## 6. Visualizer (The View)
+## 7. Visualizer (The View)
 *   **Role:** Provides the user interface for exploring history.
 *   **Components:** `osmdroid` MapView, Local Cache (File System).
 *   **Responsibilities:**
@@ -73,13 +78,13 @@ To strictly satisfy both the "Privacy-First" (FOSS) and "Ease of Development" (B
     *   **Caching:** Store downloaded track files locally to support offline viewing.
 *   **Implements Requirements:** [Visualization & History](requirements/visualization.md)
 
-## 7. Local Data Persistence
+## 8. Local Data Persistence
 *   **Role:** Intermediate buffer and state storage.
 *   **Components:**
     *   **Room Database:** Stores pending location points and application logs.
     *   **EncryptedSharedPreferences:** Stores sensitive AWS credentials (Runtime Keys), configuration (Device ID), and the **Telemetry Salt**.
 
-## 8. Battery Impact Analysis
+## 9. Battery Impact Analysis
 To ensure transparency and manage user expectations, we estimate the battery impact of the "Always On" architecture.
 
 *   **High Impact (GPS/Network):**

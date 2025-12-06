@@ -71,7 +71,20 @@ All AWS clients must be configured with consistent timeouts, retry policies, and
     *   **Factor:** 2.0.
     *   **Scope:** Transient errors (IOException, 5xx). 4xx errors are fatal.
 
-### 2.2. Credentials Providers
+### 2.2. Traffic Guardrail (Circuit Breaker)
+To prevent unexpected costs or battery drain due to infinite loops or aggressive syncing, the network layer must enforce a strict daily quota.
+
+*   **Limit:** **50MB per day** (Upload + Download).
+*   **Implementation:**
+    *   Network client wraps requests in a `TrafficMeasuringInterceptor`.
+    *   Persists daily totals in `SharedPreferences`.
+    *   Resets at 00:00 local time.
+*   **Action:**
+    *   If `usage > 50MB`: Throw `QuotaExceededException`.
+    *   The `WorkManager` job catches this and disables background sync until the next day.
+    *   **Exception:** "Manual Sync" requested by the user overrides this check (requires explicit confirmation).
+
+### 2.3. Credentials Providers
 *   **Bootstrap:** `StaticCredentialsProvider` using the Access Key ID and Secret Key entered by the user.
 *   **Runtime:** `StaticCredentialsProvider` using the keys stored in `EncryptedSharedPreferences`.
 
