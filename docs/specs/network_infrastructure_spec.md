@@ -71,7 +71,26 @@ All AWS clients must be configured with consistent timeouts, retry policies, and
     *   **Factor:** 2.0.
     *   **Scope:** Transient errors (IOException, 5xx). 4xx errors are fatal.
 
-### 2.2. Credentials Providers
+### 2.2. Traffic Guardrail (Circuit Breaker)
+To prevent unexpected costs or battery drain due to infinite loops or aggressive syncing, the network layer must enforce a strict daily quota.
+
+*   **Limit:** **50MB per day** (Upload + Download).
+*   **Implementation:**
+    *   Network client wraps requests in a `TrafficMeasuringInterceptor`.
+    *   Persists daily totals in `SharedPreferences`.
+    *   **Lazy Reset Logic:**
+        *   The interceptor checks the `last_reset_date` before every request.
+        *   If `last_reset_date != current_date` (local midnight), the counter is reset to 0 *before* proceeding.
+        *   This avoids the need for a potentially unreliable "midnight" background job.
+*   **Action:**
+    *   If `usage > 50MB`: Throw `QuotaExceededException`.
+    *   The `WorkManager` job catches this and disables background sync until the next day.
+    *   **Manual Override:**
+        *   **Scenario:** User explicitly presses "Sync Now".
+        *   **Mechanism:** The `SyncWorker` injects a header `X-Locus-Force: true` into the request context.
+        *   **Interceptor Behavior:** If this header is present, the interceptor logs the usage but **bypasses the 50MB limit check**, allowing the request to proceed.
+
+### 2.3. Credentials Providers
 *   **Bootstrap:** `StaticCredentialsProvider` using the Access Key ID and Secret Key entered by the user.
 *   **Runtime:** `StaticCredentialsProvider` using the keys stored in `EncryptedSharedPreferences`.
 
@@ -172,27 +191,33 @@ sequenceDiagram
 
 ## 5. Community Telemetry (Optional)
 
-This module handles the optional upload of anonymous crash reports.
+This module handles the optional upload of anonymous crash reports. It employs the **Adapter Pattern** to decouple the app from the specific telemetry provider (e.g., Firebase, Sentry, or custom server).
 
-### 5.1. Interface
+### 5.1. Interface (Port)
+The Domain Layer defines the contract:
 ```kotlin
 interface CommunityTelemetryRemote {
-    suspend fun uploadCrashReport(report: CrashReportDto): Result<Unit>
-    suspend fun uploadAnonymizedStats(stats: CommunityStatsDto): Result<Unit>
+    fun recordCrash(t: Throwable)
+    fun setUserId(anonymizedId: String)
+    fun setCustomKey(key: String, value: String)
 }
 ```
 
-### 5.2. Implementation Variants (Flavors)
+### 5.2. Implementation Variants (Adapters)
 
-*   **`standard` Flavor:**
-    *   **Library:** Retrofit + OkHttp.
-    *   **Base URL:** `BuildConfig.COMMUNITY_API_URL`.
-    *   **Auth:** None (Public endpoint) or API Key if required in future.
-    *   **Logic:** Simple POST request.
+*   **`standard` Flavor (`FirebaseTelemetryRemote`):**
+    *   **Wraps:** `com.google.firebase.crashlytics` SDK.
+    *   **Logic:**
+        *   `recordCrash` -> `FirebaseCrashlytics.getInstance().recordException(t)`
+        *   `setUserId` -> `FirebaseCrashlytics.getInstance().setUserId(id)`
+    *   **Rationale:** Uses the managed service for the default Play Store build.
 
-*   **`foss` Flavor:**
-    *   **Implementation:** No-Op (Stub).
-    *   **Logic:** Immediately returns `Result.Success` (or `Result.Failure` with "Disabled" message, handled gracefully by domain).
+*   **`foss` Flavor (`NoOpTelemetryRemote`):**
+    *   **Wraps:** None.
+    *   **Logic:** All methods are empty functions (No-Op).
+    *   **Rationale:** Ensures strictly no proprietary code or network calls in FOSS builds.
+
+*   **Future Flexibility:** This interface allows future replacement with a `RestApiTelemetryRemote` (using Retrofit) to send data to a self-hosted server without modifying the Domain or Data layers.
 
 ## 6. Hilt Modules
 

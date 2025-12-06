@@ -74,8 +74,9 @@ Each line in the log file **must** adhere to the following schema:
 ```
 
 ### 3.2. Secondary: Community Service (Opt-In)
-*   **Service:** Firebase Crashlytics (initially), behind an interface to allow future migration (e.g., to Sentry).
+*   **Service:** Firebase Crashlytics (via `FirebaseTelemetryRemote`).
 *   **Mechanism:** Native SDK integration (Standard Flavor only).
+*   **Schema:** Defined implicitly by the Firebase Crashlytics platform (Stacks, Keys, User IDs). No custom JSON schema is required at this stage.
 *   **Privacy Strategy:** "Salted Anonymity"
     *   **The Risk:** Linking a crash report (containing app state) to a public track file (containing `device_id`).
     *   **The Solution:** The app generates a random UUID (`telemetry_salt`) at install time, stored in `EncryptedSharedPreferences`.
@@ -95,18 +96,34 @@ To ensure the "Fail-Open" mandate:
 2.  **Exception Swallowing (Best Effort Retry):**
     *   **IF** a telemetry upload fails, **THEN** the system **shall** catch the exception and abort the **current attempt**.
     *   **The system shall not** retry immediately (to preserve battery).
-    *   **Implicit Retry:** The failed logs **remain in the Local Circular Buffer**. They will naturally be included in the **next scheduled upload batch**, provided they have not been evicted by newer logs (FIFO).
-    *   **Trade-off:** This prioritizes battery life over guaranteed delivery. If the buffer overflows before the next successful sync, old logs are dropped.
-3.  **Circuit Breaking:**
+    *   **Implicit Retry:** The failed logs **remain in the Local Circular Buffer**. They will naturally be included in the **next scheduled upload batch**.
+
+3.  **Independent Storage & Eviction Strategy:**
+    To maximize data availability for the user while decoupling S3 from Community failures, the system uses a **Single Circular Buffer with Independent Cursors**.
+    *   **Single Source of Truth:**
+        *   All logs are written to a single, fixed-size circular buffer (e.g., **5MB Limit**).
+        *   This buffer is the **exclusive source** for the on-device "Logs" screen.
+    *   **Independent Cursors:**
+        *   `Cursor_S3`: Tracks the offset successfully uploaded to the User's S3 bucket.
+        *   `Cursor_Community`: Tracks the offset successfully uploaded to the Community Service.
+        *   These cursors move independently. A failure in Community upload does *not* affect the S3 cursor, and vice-versa.
+    *   **Eviction Policy (FIFO):**
+        *   Data is **NEVER** deleted based on upload status.
+        *   Data is **ONLY** overwritten when the buffer reaches its capacity (5MB).
+        *   **Rationale:** This guarantees that the user always has access to the most recent ~5MB of logs for immediate on-device debugging, even if all network uploads are failing.
+    *   **Trade-off:** If an upload service is down for an extended period and the buffer wraps around, the old data is lost (overwritten) before it can be uploaded. This is an accepted trade-off to prevent storage bloat.
+
+4.  **Circuit Breaking:**
     *   **IF** telemetry uploads fail consecutively for > 5 attempts, **THEN** the Telemetry Module **shall** enter a "Backoff" state for 6 hours.
 
 ## 5. Implementation Definition
 
-### 5.1. Local Debug Dashboard
-Since S3 logs are remote and compressed, the app **shall** provide a local "Debug View" for immediate troubleshooting:
-*   **Source:** Reads from the *Local Circular Buffer* (in-memory or short-term file).
+### 5.1. Local Logs Screen
+The on-device "Logs" screen is a direct view of the **Local Circular Buffer**.
+*   **Scope:** Strictly displays the contents of the local buffer (last ~5MB).
+*   **No Remote Fetch:** The app **shall not** attempt to download or merge historical log files from S3. Deep historical analysis must be performed by downloading the files from S3 to a desktop computer.
 *   **Features:**
-    *   Scrollable list of recent logs (last ~500 lines).
+    *   Scrollable list of recent logs.
     *   Color-coded by level (WARN/ERROR).
     *   "Copy to Clipboard" / "Share" button for manual reporting.
 

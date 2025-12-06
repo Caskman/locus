@@ -6,11 +6,21 @@ This document defines the automated verification and delivery pipeline for Locus
 
 The validation pipeline is designed to be **Local-First**.
 *   **Principle:** "If it fails on CI, it must fail locally."
-*   **Implementation:** All CI steps are wrappers around local scripts (e.g., `./gradlew check`, `./scripts/audit_infra.sh`).
-*   **Determinism:** All tools (linters, scanners) must use **Strict Version Pinning** via lockfiles (e.g., `requirements.txt`, `Gemfile`, Docker) to ensure the local environment matches CI exactly.
+*   **Implementation:** All CI steps are wrappers around local scripts defined in the [Automation Scripts Specification](../specs/automation_scripts_spec.md).
+*   **Determinism:** All tools (linters, scanners) must use **Strict Version Pinning** via lockfiles to ensure the local environment matches CI exactly.
 *   **Benefit:** Developers can verify their work fully without pushing to a remote server, supporting the offline/sovereign development model.
 
-## 2. Developer Environment (Pre-Commit)
+## 2. Tool Versioning Strategy
+
+To ensure reproducible builds, all validation tools must be pinned.
+
+*   **Python Tools:** Managed via `requirements.txt`.
+    *   Includes: `cfn-lint`, `checkov`, `taskcat`, `boto3`.
+    *   **Rule:** Developers must install these via `./scripts/setup_ci_env.sh`.
+*   **Gradle Plugins:** Managed via `libs.versions.toml` (Version Catalog).
+*   **Shell Utilities:** Checked at runtime by the scripts (e.g., checking `java --version`).
+
+## 3. Developer Environment (Pre-Commit)
 
 To catch issues early and prevent secrets from entering version control, developers must configure local Git hooks.
 
@@ -20,7 +30,7 @@ To catch issues early and prevent secrets from entering version control, develop
     *   **Syntax Check:** Basic linting for Kotlin, Markdown, and YAML.
     *   **File Size:** Prevents accidental commit of large binaries.
 
-## 3. Validation Tiers
+## 4. Validation Tiers
 
 The pipeline executes checks in order of speed and cost.
 
@@ -76,7 +86,7 @@ The pipeline executes checks in order of speed and cost.
 *   **Tool:** AWS Device Farm (via `scripts/run_device_farm.py`).
 *   **Details:** See [Advanced Validation Strategy](advanced_validation.md).
 
-## 3. Continuous Integration (GitHub Actions)
+## 5. Continuous Integration (GitHub Actions)
 
 The `.github/workflows/validation.yml` workflow orchestrates Tiers 1-3 automatically. Tiers 4 and 5 are triggered manually.
 
@@ -98,7 +108,7 @@ jobs:
         run: ./scripts/verify_security.sh
 ```
 
-## 5. Release Automation
+## 6. Release Automation
 
 To support the "User builds from source" model while offering convenience, we employ automated release generation.
 

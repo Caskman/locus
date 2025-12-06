@@ -15,5 +15,5 @@
 ## 1.3. Battery Safety Protocol
 *   **Low Battery (< 10%):** While the battery capacity is less than 10%, the system shall reduce the recording frequency to 10 seconds.
 *   **Low Battery Uploads:** While the battery capacity is less than 10%, the system shall pause automatic data uploads.
-*   **Critical Battery (< 3%):** While the battery capacity is less than 3%, the system shall reduce the recording frequency to 60 seconds.
+*   **Critical Battery (< 3%):** While the battery capacity is less than 3%, the system shall enter "Deep Sleep" mode: GPS acquisition shall stop, and all WakeLocks shall be released.
 *   **Recovery:** When the battery capacity rises above 15%, the system shall resume standard recording and upload schedules.

@@ -44,8 +44,12 @@ Real-world validation on physical devices to catch OEM-specific aggression (e.g.
 *   **Workflow:**
     1.  **Build:** Generate `app-debug-androidTest.apk` and `app-debug.apk`.
     2.  **Upload:** The script uploads binaries to AWS Device Farm.
-    3.  **Schedule:** The script schedules a run against a defined "Device Pool" (e.g., Top 5 Android devices by market share).
-    4.  **Poll:** The script actively polls the run status.
+    3.  **Schedule:** The script schedules a run against a defined "Device Pool" consisting of representative categories:
+        *   **Stock Flagship:** (e.g., Google Pixel 8/Pro) - Baseline Android behavior.
+        *   **OEM Flagship:** (e.g., Samsung Galaxy S-Series) - Heavily skinned UI.
+        *   **Budget/Mid-Range:** (e.g., Samsung A-Series or Moto G) - Limited resources.
+        *   **Legacy OS:** (e.g., Device running **Android 9** (API 28)) - Compatibility checks.
+    4.  **Poll:** The script actively polls the run status with a hard timeout of **30 minutes**.
     5.  **Download:** On completion, it downloads the XML test results and screenshots.
 *   **Cost Control:**
     *   Disabled by default.
