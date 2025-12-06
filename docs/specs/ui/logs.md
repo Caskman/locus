@@ -20,6 +20,9 @@
 
 ## 2. Components
 *   **Icon:** `terminal`
+*   **Data Source:** **Local Buffer Only.**
+    *   The screen displays *strictly* the contents of the local circular buffer (approx. 5MB of recent logs).
+    *   **No Remote Fetch:** There is no "Infinite Scroll" to download older history from S3. Deep historical analysis must be performed by downloading the `.ndjson.gz` files from the S3 bucket externally.
 
 ### 2.1. Top App Bar & Search
 *   **Search Action:** A "Magnifying Glass" icon in the top-right.
@@ -46,10 +49,6 @@
         *   *Older:* `MMM dd HH:mm`
     *   **Tag:** `[Tag]` in bold/colored text.
     *   **Message:** The log content.
-*   **Infinite Scroll (History):**
-    *   **Behavior:** As the user scrolls up and approaches the top of the currently loaded list, the system **automatically** fetches the next page of older logs.
-    *   **Indicator:** A small **Circular Progress Spinner** appears at the top momentarily during this fetch.
-    *   *Note:* No "Pull to Load" gesture is used; scrolling is seamless.
 *   **Interaction:** Tapping any row opens the **Log Detail Bottom Sheet**.
 
 ### 2.4. Floating Controls
@@ -78,7 +77,6 @@
 
 ### 3.1. Loading States
 *   **Initial Load:** A **Centered Circular Progress Indicator** must appear immediately upon opening the screen while the initial database fetch is performed, before the list content becomes visible.
-*   **History Fetch:** Small spinner at the top of the list (as described in Infinite Scroll).
 *   **Exporting:** When "Share/Export" is tapped:
     *   The menu item becomes **Disabled**.
     *   A **Circular Progress Spinner** replaces the icon.
@@ -103,7 +101,6 @@
 +--------------------------------------------------+
 |  [x] Error   [x] Warn   [ ] Info   [ ] Debug     |  <-- Sticky Header (Standard Levels)
 +--------------------------------------------------+
-|           (  )  <-- History Loader               |
 |                                                  |
 | ❌ 14:02:10 [Loc] RecordPoint: Acc=12m           |
 | ℹ️ 14:02:05 [Net] Upload: Success (200 OK)       |
