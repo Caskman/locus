@@ -8,5 +8,5 @@
 *   **Data Classes:** Use data classes for simple data holders to automatically generate utility functions.
 *   **Visibility:** Default to `private` or `internal` visibility. Expose only what is strictly necessary for the public API.
 *   **File Organization:** Define one class per file unless the types are small DTOs or sealed subclasses tightly coupled to the parent.
-*   **Ordering:** Order class members: Constants, Properties, Initialization, Public Functions, Private Functions.
+*   **Ordering:** Organize class members in this order: Companion Objects, Properties, Initialization blocks, Public Functions, Private Functions, Inner Classes.
 *   **Formatting:** Enable trailing commas to reduce diff noise.
