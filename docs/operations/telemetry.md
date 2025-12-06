@@ -74,8 +74,9 @@ Each line in the log file **must** adhere to the following schema:
 ```
 
 ### 3.2. Secondary: Community Service (Opt-In)
-*   **Service:** Firebase Crashlytics (initially), behind an interface to allow future migration (e.g., to Sentry).
+*   **Service:** Firebase Crashlytics (via `FirebaseTelemetryRemote`).
 *   **Mechanism:** Native SDK integration (Standard Flavor only).
+*   **Schema:** Defined implicitly by the Firebase Crashlytics platform (Stacks, Keys, User IDs). No custom JSON schema is required at this stage.
 *   **Privacy Strategy:** "Salted Anonymity"
     *   **The Risk:** Linking a crash report (containing app state) to a public track file (containing `device_id`).
     *   **The Solution:** The app generates a random UUID (`telemetry_salt`) at install time, stored in `EncryptedSharedPreferences`.

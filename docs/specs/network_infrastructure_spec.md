@@ -172,27 +172,33 @@ sequenceDiagram
 
 ## 5. Community Telemetry (Optional)
 
-This module handles the optional upload of anonymous crash reports.
+This module handles the optional upload of anonymous crash reports. It employs the **Adapter Pattern** to decouple the app from the specific telemetry provider (e.g., Firebase, Sentry, or custom server).
 
-### 5.1. Interface
+### 5.1. Interface (Port)
+The Domain Layer defines the contract:
 ```kotlin
 interface CommunityTelemetryRemote {
-    suspend fun uploadCrashReport(report: CrashReportDto): Result<Unit>
-    suspend fun uploadAnonymizedStats(stats: CommunityStatsDto): Result<Unit>
+    fun recordCrash(t: Throwable)
+    fun setUserId(anonymizedId: String)
+    fun setCustomKey(key: String, value: String)
 }
 ```
 
-### 5.2. Implementation Variants (Flavors)
+### 5.2. Implementation Variants (Adapters)
 
-*   **`standard` Flavor:**
-    *   **Library:** Retrofit + OkHttp.
-    *   **Base URL:** `BuildConfig.COMMUNITY_API_URL`.
-    *   **Auth:** None (Public endpoint) or API Key if required in future.
-    *   **Logic:** Simple POST request.
+*   **`standard` Flavor (`FirebaseTelemetryRemote`):**
+    *   **Wraps:** `com.google.firebase.crashlytics` SDK.
+    *   **Logic:**
+        *   `recordCrash` -> `FirebaseCrashlytics.getInstance().recordException(t)`
+        *   `setUserId` -> `FirebaseCrashlytics.getInstance().setUserId(id)`
+    *   **Rationale:** Uses the managed service for the default Play Store build.
 
-*   **`foss` Flavor:**
-    *   **Implementation:** No-Op (Stub).
-    *   **Logic:** Immediately returns `Result.Success` (or `Result.Failure` with "Disabled" message, handled gracefully by domain).
+*   **`foss` Flavor (`NoOpTelemetryRemote`):**
+    *   **Wraps:** None.
+    *   **Logic:** All methods are empty functions (No-Op).
+    *   **Rationale:** Ensures strictly no proprietary code or network calls in FOSS builds.
+
+*   **Future Flexibility:** This interface allows future replacement with a `RestApiTelemetryRemote` (using Retrofit) to send data to a self-hosted server without modifying the Domain or Data layers.
 
 ## 6. Hilt Modules
 
