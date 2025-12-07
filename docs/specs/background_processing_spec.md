@@ -117,8 +117,7 @@ Handles data upload logic defined in the Domain Layer.
 ```mermaid
 flowchart TD
     Start[Start Worker] --> CheckQuota{Check Traffic Quota}
-    CheckQuota -- Exceeded --> Pause[Result.success]
-    note right of Pause: Pause until next run (15m)
+    CheckQuota -- Exceeded --> Pause[Result.success<br/>(Pause until next run 15m)]
 
     CheckQuota -- OK --> Sync[PerformSyncUseCase]
 
