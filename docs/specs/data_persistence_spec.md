@@ -195,7 +195,7 @@ To map complex Kotlin types to SQLite primitives:
 To enforce the **500MB Soft Limit** for the Location Buffer without expensive file size checks, we use a **Row Count Proxy**.
 *   **Assumption:** Average `LocationEntity` size on disk (WAL + Indices) ≈ 200 bytes.
 *   **Limit:** 500,000,000 bytes / 200 bytes/row = **2,500,000 Rows**.
-*   **Enforcement:** The `SyncWorker` checks `LocationDao.getCount()` before insertion or after upload. If `count > 2,500,000`, it triggers `deleteOldest(chunk_size)`.
+*   **Enforcement:** The `SyncWorker` checks `LocationDao.getCount()` before insertion. If `count > 2,500,000`, it triggers `deleteOldest(chunk_size)`.
 
 ### 5.2. Log Buffer Logic (Circular)
 *   **Circular Buffer:** `LogEntity` acts as a circular buffer.
