@@ -18,15 +18,17 @@
 
 ## 2. Components
 *   **Icon:** `terminal`
-*   **Data Source:** **Local Buffer Only.**
-    *   The screen displays *strictly* the contents of the local circular buffer (approx. 5MB of recent logs).
+*   **Data Source:** **Local Circular Buffer (Room/SQLite).**
+    *   The screen displays the contents of the `LogEntity` table, filtered via SQLite queries.
+    *   **Retention:** Logs are available until they are evicted by the circular buffer limit (5MB), regardless of whether they have been uploaded to S3.
     *   **No Remote Fetch:** There is no "Infinite Scroll" to download older history from S3. Deep historical analysis must be performed by downloading the `.ndjson.gz` files from the S3 bucket externally.
 
 ### 2.1. Top App Bar & Search
 *   **Search Action:** A "Magnifying Glass" icon in the top-right.
     *   *Interaction:* Tapping expands a text input field, temporarily replacing the screen title.
     *   *Logic:* Search acts as an **AND** filter combined with active chips (e.g., `(Error OR Warn) AND "Network"`).
-    *   *Matching:* Case-insensitive substring match against Tag and Message.
+    *   *Implementation:* Utilizes SQLite `LIKE %query%` clause against Tag and Message fields.
+    *   *Matching:* Case-insensitive substring match.
 *   **Context Menu:**
     *   **Export Logs:**
         *   *Format:* **Plain Text (`.txt`)**. This ensures the file is easily readable on any device without specialized tools.
@@ -35,6 +37,7 @@
 ### 2.2. Filter Chips
 *   **Type:** Multi-select Choice Chips.
 *   **Logic:** Functions as a **Union (OR)** operation. Selecting "Error" and "Warn" displays entries that are *either* Errors *or* Warnings.
+*   **Implementation:** Utilizes SQLite `IN (...)` clause.
 *   **Levels:** strictly adheres to conventional log levels:
     *   **Error** (Red)
     *   **Warn** (Yellow)
@@ -55,7 +58,7 @@
 ### 2.4. Floating Controls
 *   **Jump to Bottom FAB:** A small Floating Action Button (e.g., "Arrow Down" icon).
     *   *Visibility:* Appears **only** when auto-scroll is paused (scrolled up, searching, or filtering). Disappears when at the bottom.
-    *   *Action:* Smoothly scrolls to the most recent entry and resumes auto-scroll.
+    *   *Action:* Smoothly scrolls to the **newest entry** (Position 0 in a `reverseLayout=true` list) and resumes auto-scroll.
 
 ### 2.5. Log Detail Bottom Sheet (Modal)
 *   **Trigger:** Tap on any log row.

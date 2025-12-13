@@ -100,18 +100,15 @@ To ensure the "Fail-Open" mandate:
 
 3.  **Independent Storage & Eviction Strategy:**
     To maximize data availability for the user while decoupling S3 from Community failures, the system uses a **Single Circular Buffer with Independent Cursors**.
+    *   **Implementation:** See [Data Persistence Spec](data_persistence_spec.md) for `LogEntity` (Buffer) and `CursorEntity` (Progress Tracking) definitions.
     *   **Single Source of Truth:**
         *   All logs are written to a single, fixed-size circular buffer (e.g., **5MB Limit**).
         *   This buffer is the **exclusive source** for the on-device "Logs" screen.
-    *   **Independent Cursors:**
-        *   `Cursor_S3`: Tracks the offset successfully uploaded to the User's S3 bucket.
-        *   `Cursor_Community`: Tracks the offset successfully uploaded to the Community Service.
-        *   These cursors move independently. A failure in Community upload does *not* affect the S3 cursor, and vice-versa.
-    *   **Eviction Policy (FIFO):**
-        *   Data is **NEVER** deleted based on upload status.
-        *   Data is **ONLY** overwritten when the buffer reaches its capacity (5MB).
-        *   **Rationale:** This guarantees that the user always has access to the most recent ~5MB of logs for immediate on-device debugging, even if all network uploads are failing.
-    *   **Trade-off:** If an upload service is down for an extended period and the buffer wraps around, the old data is lost (overwritten) before it can be uploaded. This is an accepted trade-off to prevent storage bloat.
+    *   **Retention Policy (FIFO):**
+        *   Data in the **Local Buffer** is **NEVER** deleted based on upload status.
+        *   **Cursors:** The `Cursor_S3` and `Cursor_Community` stored in `CursorEntity` are advanced only upon successful upload.
+        *   **Eviction:** Data is **ONLY** overwritten/deleted from the buffer when the buffer reaches its capacity (5MB).
+        *   **Rationale:** This guarantees that the user always has access to the most recent ~5MB of logs for immediate on-device debugging, even if all network uploads are failing or have already succeeded.
 
 4.  **Circuit Breaking:**
     *   **IF** telemetry uploads fail consecutively for > 5 attempts, **THEN** the Telemetry Module **shall** enter a "Backoff" state for 6 hours.
