@@ -4,7 +4,34 @@ This directory contains the behavioral specifications for the Locus system, writ
 
 These specifications are organized by **Feature Bounded Context** and are listed below in their logical dependency order. This order dictates the implementation sequence: upstream dependencies (like Data Production) must be defined before downstream consumers (like Visualization).
 
-## Dependency Order
+## Dependency Graph
+
+```mermaid
+flowchart TD
+    Identity[01 Onboarding & Identity] --> Tracking[02 Intelligent Tracking]
+
+    Tracking --> Sync[03 Cloud Synchronization]
+    Tracking --> Battery[04 Adaptive Battery Safety]
+    Tracking --> Reliability[07 Service Reliability]
+
+    Sync --> Vis[06 Historical Visualization]
+
+    Tracking --> Status[05 System Status & Feedback]
+    Sync --> Status
+    Battery --> Status
+    Reliability --> Status
+
+    %% Styling
+    classDef basis fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef logic fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef ui fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+
+    class Identity,Tracking,Sync basis;
+    class Battery,Reliability logic;
+    class Status,Vis ui;
+```
+
+## Dependency Descriptions
 
 ### 1. [Onboarding & Identity](01_onboarding_identity.md)
 *   **Role:** User Context & Security.
@@ -24,6 +51,7 @@ These specifications are organized by **Feature Bounded Context** and are listed
 *   **Role:** Constraint Layer.
 *   **Dependency:** Governs Tracking and Synchronization.
 *   **Logic:** Overrides standard behaviors of the producer and transport layers based on resource availability.
+*   **Parallelism:** Can be implemented in parallel with **Synchronization** or **Reliability** once Tracking is established.
 
 ### 5. [System Status & Feedback](05_system_status_feedback.md)
 *   **Role:** User Interface State.
@@ -39,3 +67,4 @@ These specifications are organized by **Feature Bounded Context** and are listed
 *   **Role:** Supervisor.
 *   **Dependency:** Monitors the runtime health of all prior components.
 *   **Logic:** Ensures the continuous operation of the defined system behaviors.
+*   **Parallelism:** Can be implemented in parallel with **Synchronization** or **Battery Safety** once Tracking is established.
