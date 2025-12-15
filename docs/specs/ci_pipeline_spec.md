@@ -7,14 +7,14 @@ This document defines the automated verification and delivery pipeline for Locus
 The validation pipeline is designed to be **Local-First**.
 *   **Principle:** "If it fails on CI, it must fail locally."
 *   **Implementation:** All CI steps are wrappers around local scripts as defined in the [Automation Scripts Specification](automation_scripts_spec.md).
-*   **Determinism:** All tools (linters, scanners) must use **Strict Version Pinning** via lockfiles (required implementation) to ensure the local environment matches CI exactly.
+*   **Determinism:** All tools (linters, scanners) must use **Strict Version Pinning** via lockfiles to ensure the local environment matches CI exactly.
 *   **Benefit:** Developers can verify their work fully without pushing to a remote server, supporting the offline/sovereign development model.
 
 ## 2. Tool Versioning Strategy
 
 To ensure reproducible builds, all validation tools must be pinned.
 
-*   **Python Tools:** Managed via a required `requirements.txt` file (to be created).
+*   **Python Tools:** Managed via `requirements.txt`.
     *   Includes: `cfn-lint`, `checkov`, `taskcat`, `boto3`.
     *   **Rule:** Developers must install these via `./scripts/setup_ci_env.sh`.
 *   **Gradle Plugins:** Managed via `libs.versions.toml` (Version Catalog).

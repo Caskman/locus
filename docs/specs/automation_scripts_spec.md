@@ -4,8 +4,6 @@
 
 This document defines the requirements for the automation scripts used in the Validation Pipeline. These scripts serve as the "Interface" between the developer/CI system and the underlying tools.
 
-**Status:** This is a **Requirement Specification**. The scripts defined below are **mandatory implementation artifacts** that do not yet exist in the codebase.
-
 ## 1. General Requirements
 
 *   **Language Strategy:** The project enforces a strict "Right Tool for the Job" split:
