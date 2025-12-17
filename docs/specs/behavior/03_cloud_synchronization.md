@@ -9,8 +9,8 @@
 ---
 
 ## 1. Upload Scheduling & Triggers
-*   **While** the tracking service is active, the system **shall** schedule periodic synchronization jobs (e.g., via WorkManager) at a regular interval (default 15 minutes).
-*   **When** a synchronization job runs, the system **shall** attempt to upload all pending buffered track data to the user's S3 bucket.
+*   **While** the tracking service is active, the system **shall** schedule periodic synchronization jobs via the system scheduler at a regular interval (default 15 minutes).
+*   **When** a synchronization job runs, the system **shall** attempt to upload all pending buffered track data to the user's remote storage.
 *   **When** the user initiates a "Manual Sync" (Sync Now), the system **shall** immediately attempt an upload, overriding standard battery constraints (unless critical).
 *   **If** the device is offline during a scheduled sync, **then** the system **shall** silently defer the operation to the next scheduled interval.
 
@@ -21,13 +21,13 @@
 *   **When** the date changes (local midnight), the system **shall** reset the daily traffic counter and resume standard operation.
 
 ## 3. Data Format & Integrity
-*   **When** preparing data for upload, the system **shall** serialize the data into newline-delimited JSON (NDJSON).
-*   **When** uploading data, the system **shall** compress the payload using GZIP.
-*   **When** uploading Track data, the system **shall** apply an `x-amz-object-lock-retain-until-date` header (Object Lock) to enforce a retention policy (e.g., 100 years).
-*   **When** uploading Diagnostic Log data, the system **shall not** apply Object Lock headers, allowing for standard lifecycle deletion.
-*   **When** a track segment is successfully uploaded (HTTP 200 OK), the system **shall** delete the corresponding records from the local track buffer.
+*   **When** preparing data for upload, the system **shall** serialize the data into a standard, newline-delimited text format.
+*   **When** uploading data, the system **shall** compress the payload.
+*   **When** uploading Track data, the system **shall** apply a retention policy lock to the object for a duration of 100 years.
+*   **When** uploading Diagnostic Log data, the system **shall not** apply retention policy locks, allowing for standard lifecycle deletion.
+*   **When** a track segment is successfully uploaded, the system **shall** delete the corresponding records from the local track buffer.
 
-## 4. Community Telemetry (Optional)
+## 4. Community Telemetry
 *   **Where** the user has opted into Community Telemetry, the system **shall** upload anonymized crash and performance reports to the community endpoint.
-*   **When** uploading to the community endpoint, the system **shall** hash the Device ID (e.g., SHA256) to decouple the data from the user's persistent identity.
-*   **If** the Community upload fails, **then** the system **shall** treat it as a non-fatal error and proceed with the primary S3 upload.
+*   **When** uploading to the community endpoint, the system **shall** hash the Device ID to decouple the data from the user's persistent identity.
+*   **If** the Community upload fails, **then** the system **shall** treat it as a non-fatal error and proceed with the primary storage upload.

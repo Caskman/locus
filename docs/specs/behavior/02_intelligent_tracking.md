@@ -1,6 +1,6 @@
 # Behavioral Specification: Intelligent Tracking
 
-**Bounded Context:** This specification governs the core data production behavior, including GPS acquisition, sensor fusion logic, moving/stationary state transitions, and hardware wake-up triggers.
+**Bounded Context:** This specification governs the core data production behavior, including location acquisition, sensor fusion logic, moving/stationary state transitions, and hardware wake-up triggers.
 
 **Prerequisite:** Depends on **[Onboarding & Identity](01_onboarding_identity.md)** (for valid session context).
 **Downstream:** Produces data for **[Cloud Synchronization](03_cloud_synchronization.md)** and **[Historical Visualization](06_historical_visualization.md)**.
@@ -10,9 +10,9 @@
 
 ## 1. Location Acquisition
 *   **While** the tracking service is active, the system **shall** record geospatial location data (Latitude, Longitude, Altitude) at a default frequency of 1Hz.
-*   **While** the tracking service is active, the system **shall** prioritize the Fused Location Provider (Google Play Services) where available.
-*   **If** the Fused Location Provider is unavailable (e.g., FOSS flavor, Missing Play Services), **then** the system **shall** fall back to the raw GPS Location Manager.
-*   **While** the application is in the background or the device is sleeping, the system **shall** maintain continuous data collection via a Foreground Service with a Partial Wake Lock.
+*   **While** the tracking service is active, the system **shall** prioritize the high-accuracy, low-power location provider where available.
+*   **If** the high-accuracy provider is unavailable, **then** the system **shall** fall back to the raw hardware location provider.
+*   **While** the application is in the background or the device is sleeping, the system **shall** maintain continuous data collection via a visible background process with a partial wake lock.
 *   **While** the OS "Battery Saver" mode is active, the system **shall** ignore OS throttling suggestions and continue standard data collection operations.
 
 ## 2. Sensor Fusion & Enrichment
@@ -22,7 +22,7 @@
 
 ## 3. Stationary Logic (Optimization)
 *   **When** no significant movement is detected for a continuous duration of 2 minutes, the system **shall** enter "Stationary Mode".
-*   **While** in Stationary Mode, the system **shall** suspend active GPS acquisition.
-*   **While** in Stationary Mode, the system **shall** register a hardware-backed Significant Motion trigger (or equivalent low-power sensor interrupt).
-*   **When** the Significant Motion trigger fires, the system **shall** immediately exit Stationary Mode and resume standard GPS acquisition.
-*   **If** hardware-backed Significant Motion is unavailable, **then** the system **shall** utilize periodic accelerometer polling (Periodic Burst) to detect movement.
+*   **While** in Stationary Mode, the system **shall** suspend active location acquisition.
+*   **While** in Stationary Mode, the system **shall** register a hardware-backed motion trigger (or equivalent low-power sensor interrupt).
+*   **When** the motion trigger fires, the system **shall** immediately exit Stationary Mode and resume standard location acquisition.
+*   **If** hardware-backed motion detection is unavailable, **then** the system **shall** utilize periodic accelerometer polling to detect movement.

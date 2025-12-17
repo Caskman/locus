@@ -7,9 +7,9 @@
 ---
 
 ## 1. Persistent Notification
-*   **While** the tracking service is active, the system **shall** display a Persistent Notification (Foreground Service) to prevent OS termination.
+*   **While** the tracking service is active, the system **shall** display a Persistent Notification (visible background process indicator) to prevent OS termination.
 *   **When** updating the notification, the system **shall** strictly adhere to the format: `[Recording Status] • [Sync Status]`.
-*   **When** the system state changes (e.g., GPS acquired, Sync complete, Low Battery), the system **shall** immediately update the notification text.
+*   **When** the system state changes (e.g., Location acquired, Sync complete, Low Battery), the system **shall** immediately update the notification text.
 *   **If** a transient error occurs (Tier 1) or an environmental pause (Tier 2), **then** the system **shall** update the notification text (e.g., "Waiting for Network") without triggering sound or vibration.
 
 ## 2. Dashboard Status
@@ -19,12 +19,12 @@
 *   **When** the "Stop Tracking" action is triggered, the system **shall** display a confirmation dialog to prevent accidental data gaps.
 
 ## 3. Error Handling Hierarchy
-*   **If** a **Tier 1 (Transient)** error occurs (e.g., Network Timeout, 500 Error), **then** the system **shall** handle it silently via exponential backoff and **shall not** notify the user.
+*   **If** a **Tier 1 (Transient)** error occurs (e.g., Network Timeout, Server Error), **then** the system **shall** handle it silently via exponential backoff and **shall not** notify the user.
 *   **If** a **Tier 2 (Environmental)** condition occurs (e.g., Low Battery, Airplane Mode), **then** the system **shall** update the Persistent Notification text but **shall not** play a sound or vibrate.
-*   **If** a **Tier 3 (Fatal)** error occurs (e.g., AWS 403, Permission Revoked, Service Crash Loop), **then** the system **shall** trigger a High Priority Notification with sound and vibration.
+*   **If** a **Tier 3 (Fatal)** error occurs (e.g., Authentication Failure, Permission Revoked, Service Crash Loop), **then** the system **shall** trigger a High Priority Notification with sound and vibration.
 *   **When** a Tier 3 error occurs, the system **shall** display a Blocking Full-Screen Error overlay that prevents interaction until the issue is resolved.
 
 ## 4. Manual Sync Feedback
-*   **When** a Manual Sync is initiated, the system **shall** display an indeterminate progress indicator (e.g., Linear Progress Bar).
-*   **If** the Manual Sync completes successfully, **then** the system **shall** display a success message (e.g., Toast) and refresh the "Last Sync" time.
+*   **When** a Manual Sync is initiated, the system **shall** display an indeterminate progress indicator.
+*   **If** the Manual Sync completes successfully, **then** the system **shall** display a success message and refresh the "Last Sync" time.
 *   **If** the Manual Sync fails, **then** the system **shall** display a specific, actionable error message (e.g., "Check Internet Connection").
