@@ -27,10 +27,10 @@ To adhere to the "Subtle by Default" philosophy while ensuring critical alerts a
     *   **Tap Behavior:** Tapping the notification body opens the **Dashboard** (or deep-links to the error resolution screen for Fatal Errors).
 
 ## 2. Content Format
-The notification title and body must strictly follow this format to ensure consistency.
+The notification title and body must strictly follow this simplified format to ensure clarity and minimal distraction.
 
-*   **Title:** `Locus • [State]`
-*   **Body:** `[Tracking Status] • [Sync Status]`
+*   **Title:** `Locus`
+*   **Body:** `[Simple State]`
 
 ## 3. States & Wireframes
 
@@ -41,8 +41,8 @@ The notification title and body must strictly follow this format to ensure consi
 
 ```text
 +--------------------------------------------------+
-|  (ic_stat_tracking)  Locus • Initializing        |
-|  Acquiring GPS...                                |
+|  (ic_stat_tracking)  Locus                       |
+|  Initializing...                                 |
 |                                                  |
 |            [ STOP TRACKING ]                     |
 +--------------------------------------------------+
@@ -52,36 +52,47 @@ The notification title and body must strictly follow this format to ensure consi
 *   **Context:** Normal operation. GPS is locked, data is being recorded.
 *   **Channel:** `channel_tracking` (Low).
 *   **Icon:** `@drawable/ic_stat_tracking`
-*   **Variations:**
-    *   *High Accuracy:* GPS locked.
-    *   *Stationary:* Significant Motion only (GPS Suspended).
-    *   *Buffer Warning:* **Warning:** Local Track buffer > 10k points (Risk of data loss).
+*   **Note:** Detailed status (accuracy, sync) is removed for simplicity.
+*   **Buffer Warning:** If buffer > 10k points, text changes to `Tracking active (Buffer full)`.
 
 ```text
 +--------------------------------------------------+
-|  (ic_stat_tracking)  Locus • Recording           |
-|  Tracking (High Accuracy) • Synced               |
-|  (OR: Tracking • Buffer Warning: 10k+ pts)       |
+|  (ic_stat_tracking)  Locus                       |
+|  Tracking active                                 |
 |                                                  |
 |            [ STOP TRACKING ]                     |
 +--------------------------------------------------+
 ```
 
-### 3.3. Active (Uploading)
+### 3.3. Stationary
+*   **Context:** Device is still (Significant Motion / Deep Sleep).
+*   **Channel:** `channel_tracking` (Low).
+*   **Icon:** `@drawable/ic_stat_tracking` (or specific stationary icon if available)
+
+```text
++--------------------------------------------------+
+|  (ic_stat_tracking)  Locus                       |
+|  Stationary                                      |
+|                                                  |
+|            [ STOP TRACKING ]                     |
++--------------------------------------------------+
+```
+
+### 3.4. Active (Uploading)
 *   **Context:** A background sync is in progress (Auto or Manual).
 *   **Channel:** `channel_tracking` (Low).
 *   **Icon:** `@drawable/ic_stat_sync` (or `ic_stat_tracking`)
 
 ```text
 +--------------------------------------------------+
-|  (ic_stat_sync)      Locus • Recording           |
-|  Tracking • Uploading batch 1 of 3...            |
+|  (ic_stat_sync)      Locus                       |
+|  Uploading data...                               |
 |                                                  |
 |            [ STOP TRACKING ]                     |
 +--------------------------------------------------+
 ```
 
-### 3.4. Paused (Environmental - Tier 2)
+### 3.5. Paused (Environmental - Tier 2)
 *   **Context:** System paused due to environmental factors (Low Battery < 15%, Airplane Mode).
 *   **Channel:** `channel_tracking` (Low).
 *   **Icon:** `@drawable/ic_stat_paused`
@@ -89,14 +100,14 @@ The notification title and body must strictly follow this format to ensure consi
 
 ```text
 +--------------------------------------------------+
-|  (ic_stat_paused)    Locus • Paused              |
-|  Low Battery (<15%) • Synced                     |
+|  (ic_stat_paused)    Locus                       |
+|  Paused: Low battery                             |
 |                                                  |
 |            [ STOP TRACKING ]                     |
 +--------------------------------------------------+
 ```
 
-### 3.5. Stopping (Transient)
+### 3.6. Stopping (Transient)
 *   **Context:** User confirmed "Stop Tracking" in the Dashboard dialog. Service is flushing buffer and releasing resources (approx. 1-3s).
 *   **Channel:** `channel_tracking` (Low).
 *   **Icon:** `@drawable/ic_stat_tracking`
@@ -104,14 +115,13 @@ The notification title and body must strictly follow this format to ensure consi
 
 ```text
 +--------------------------------------------------+
-|  (ic_stat_tracking)  Locus • Stopping...         |
-|  Saving final location...                        |
-|                                                  |
+|  (ic_stat_tracking)  Locus                       |
+|  Stopping...                                     |
 |                                                  |
 +--------------------------------------------------+
 ```
 
-### 3.6. Watchdog Rescue (Tier 3 - Android 12+)
+### 3.7. Watchdog Rescue (Tier 3 - Android 12+)
 *   **Context:** Service died/was killed, and Android 12+ prevents silent background restart.
 *   **Channel:** `channel_alerts` (High).
 *   **Icon:** `@drawable/ic_stat_alert`
@@ -119,14 +129,14 @@ The notification title and body must strictly follow this format to ensure consi
 
 ```text
 +--------------------------------------------------+
-|  (ic_stat_alert)     Locus • Service Halted      |
-|  Tracking Paused Unexpectedly                    |
+|  (ic_stat_alert)     Locus                       |
+|  Service halted                                  |
 |                                                  |
 |            [ RESUME TRACKING ]                   |
 +--------------------------------------------------+
 ```
 
-### 3.7. Error (Fatal - Tier 3)
+### 3.8. Error (Fatal - Tier 3)
 *   **Context:** Critical failure requiring user intervention (Permission Revoked, Auth Failed, Circuit Breaker).
 *   **Channel:** `channel_alerts` (High).
 *   **Icon:** `@drawable/ic_stat_alert`
@@ -135,8 +145,8 @@ The notification title and body must strictly follow this format to ensure consi
 
 ```text
 +--------------------------------------------------+
-|  (ic_stat_alert)     Locus • Service Halted      |
-|  Action Required: Permission Revoked             |
+|  (ic_stat_alert)     Locus                       |
+|  Action required                                 |
 |                                                  |
 |            [ OPEN APP ]                          |
 +--------------------------------------------------+
