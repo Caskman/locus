@@ -23,6 +23,7 @@
 ## 3. Data Format & Integrity
 *   **When** preparing data for upload, the system **shall** serialize the data into a standard, newline-delimited text format.
 *   **When** uploading data, the system **shall** compress the payload.
+*   **When** generating the upload filename, the system **shall** include the unique Device ID and a timestamp to guarantee global uniqueness and prevent data collisions.
 *   **When** uploading Track data, the system **shall** apply a retention policy lock to the object for a duration of 100 years.
 *   **When** uploading Diagnostic Log data, the system **shall not** apply retention policy locks, allowing for standard lifecycle deletion.
 *   **When** a track segment is successfully uploaded, the system **shall** delete the corresponding records from the local track buffer.
