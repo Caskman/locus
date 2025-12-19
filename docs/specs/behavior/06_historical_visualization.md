@@ -17,7 +17,8 @@
 
 ## 2. Visualization Logic
 *   **When** rendering tracks, the system **shall** strictly display only data that has been successfully synced to the remote storage (or cached from it), excluding data currently in the local upload buffer.
-*   **When** multiple devices have uploaded data for the same date, the system **shall** merge these distinct track segments into a unified view.
+*   **When** multiple devices have uploaded data for the same date, the system **shall not** merge these distinct track segments into a unified view.
+*   **When** viewing history, the system **shall** provide a "Source Device" filter allowing the user to view tracks from one device at a time, defaulting to the current device.
 *   **When** rendering a track, the system **shall** apply a downsampling algorithm to reduce point count while preserving geometry.
 *   **If** the time difference between two sequential points exceeds 5 minutes, **then** the system **shall** render a "Clean Break" (gap) in the line to indicate discontinuity.
 
