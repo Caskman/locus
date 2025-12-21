@@ -16,7 +16,7 @@
 ## 2. Critical Battery State (< 3%)
 *   **While** the battery capacity is less than 3%, the system **shall** enter "Deep Sleep Mode".
 *   **While** in Deep Sleep Mode, the system **shall** cease all location acquisition.
-*   **While** in Deep Sleep Mode, the system **shall** release all wake locks to allow the CPU to sleep.
+*   **While** in Deep Sleep Mode, the system **shall** release all processor locks to allow the CPU to sleep.
 *   **When** a Manual Sync is requested during Deep Sleep Mode, the system **shall** reject the request and display a "Battery Critical" error.
 
 ## 3. Recovery Logic
