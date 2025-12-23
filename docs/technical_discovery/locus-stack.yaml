@@ -20,6 +20,11 @@ Parameters:
 Resources:
   LocusDataBucket:
     Type: 'AWS::S3::Bucket'
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E3004
     Properties:
       # We let CloudFormation generate a unique name to avoid collisions.
 

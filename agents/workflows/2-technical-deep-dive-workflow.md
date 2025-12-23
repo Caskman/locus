@@ -514,4 +514,3 @@ Stop adding detail when:
 **User:** {provides feedback}
 
 **Agent:** {iterates or moves to next topic}
-

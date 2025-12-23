@@ -14,11 +14,15 @@ class AppVersionRepositoryImpl
     constructor(
         @ApplicationContext private val context: Context,
     ) : AppVersionRepository {
+        @Suppress("TooGenericExceptionCaught")
         override suspend fun getAppVersion(): LocusResult<AppVersion> {
             return try {
                 val packageInfo =
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+                        context.packageManager.getPackageInfo(
+                            context.packageName,
+                            PackageManager.PackageInfoFlags.of(0),
+                        )
                     } else {
                         @Suppress("DEPRECATION")
                         context.packageManager.getPackageInfo(context.packageName, 0)

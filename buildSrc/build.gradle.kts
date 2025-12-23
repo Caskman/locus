@@ -19,4 +19,6 @@ dependencies {
     implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:1.9.22-1.0.17")
     // KTLint Plugin
     implementation("org.jlleitschuh.gradle:ktlint-gradle:12.1.0")
+    // Detekt Plugin
+    implementation("io.gitlab.arturbosch.detekt:detekt-gradle-plugin:1.23.5")
 }

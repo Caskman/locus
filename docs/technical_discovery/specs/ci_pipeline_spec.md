@@ -37,6 +37,7 @@ To protect against compromised dependencies and build environments, the followin
 To ensure reproducible builds, all validation tools must be pinned.
 
 *   **Python Tools:** Managed via `requirements.txt`.
+    *   **Version:** Python 3.11 is the strict standard for all automation scripts.
     *   Includes: `cfn-lint`, `checkov`, `boto3`, `semgrep`, `requests`.
     *   **Rule:** Developers must install these via `./scripts/setup_ci_env.sh`.
 *   **Gradle Plugins:** Managed via `libs.versions.toml` (Version Catalog).

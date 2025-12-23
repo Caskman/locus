@@ -60,6 +60,7 @@ STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --r
 if [ "$STACK_STATUS" != "CREATE_COMPLETE" ]; then
     echo "Error: Stack deployment failed with status: $STACK_STATUS"
     echo "Stack events:"
+    # shellcheck disable=SC2016
     aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --region "$REGION" \
         --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].[LogicalResourceId,ResourceStatusReason]' \
         --output table || true

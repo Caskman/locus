@@ -1,0 +1,41 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: ['--allow-multiple-documents']
+        exclude: 'docs/technical_discovery/locus-stack.yaml'
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: ktlint
+        name: ktlint
+        entry: ./gradlew ktlintCheck
+        language: system
+        types: [kotlin]
+        pass_filenames: false
+
+      - id: detekt
+        name: detekt
+        entry: ./gradlew detekt
+        language: system
+        types: [kotlin]
+        pass_filenames: false
+
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
+
+      - id: cfn-lint
+        name: cfn-lint
+        entry: cfn-lint
+        language: system
+        files: 'docs/technical_discovery/locus-stack.yaml'
+        types: [yaml]

@@ -7,6 +7,7 @@ This document serves as the entry point for agents working on this repository. Y
 2.  **Read Summaries:** Review the list of rule summaries below.
 3.  **Determine Relevance:** Determine which rules apply to your current task.
 4.  **Read Full Rules:** For every relevant rule, you **must** read the full content of the referenced file and abide by its instructions.
+5.  **Verify:** You **must** run `./scripts/run_local_validation.sh` before submitting any changes. This script runs static analysis (Detekt, Shellcheck), Pre-commit hooks, and Tests.
 
 ## Rule Summaries
 

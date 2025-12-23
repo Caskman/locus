@@ -8,7 +8,7 @@ This document defines the interface and requirements for the automation scripts 
 
 *   **Language Strategy:**
     *   **Bash (`.sh`):** strictly for "Glue Code" (e.g., wrappers, simple file operations, invoking Gradle).
-    *   **Python 3 (`.py`):** strictly for "Logic" (e.g., parsing, complex validation, AWS interactions).
+    *   **Python 3.11 (`.py`):** strictly for "Logic" (e.g., parsing, complex validation, AWS interactions).
 *   **Locality:** Scripts must be executable on a local developer machine (macOS/Linux) without modification.
 *   **Idempotency:** Re-running a script must be safe.
 *   **Dependencies:** All Python dependencies are defined in `scripts/requirements.txt`.
