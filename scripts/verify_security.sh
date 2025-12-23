@@ -10,7 +10,9 @@ trufflehog filesystem . --exclude-paths=scripts/trufflehog_excludes.txt || { ech
 # 2. IaC Scanning (Checkov)
 echo "Running Checkov on CloudFormation..."
 if [ -f "docs/technical_discovery/locus-stack.yaml" ]; then
-    checkov -f docs/technical_discovery/locus-stack.yaml || { echo "Checkov failed"; exit 1; }
+    # Skip CKV_AWS_40: Per-device isolation architecture requires direct user attachment to IAM users
+    # See: docs/adr/iam-policy-attachment-per-device-isolation.md
+    checkov -f docs/technical_discovery/locus-stack.yaml --skip-check CKV_AWS_40 || { echo "Checkov failed"; exit 1; }
 else
     echo "Warning: docs/technical_discovery/locus-stack.yaml not found. Skipping Checkov."
 fi
