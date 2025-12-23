@@ -32,3 +32,31 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# IDE Cache and Settings
+.vscode/
+.sublime-project
+.sublime-workspace
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+*.egg-info/
+

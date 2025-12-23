@@ -1,6 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Locus: User-Owned Precision Tracker - S3 Bucket with Object Lock'
 
+# Architecture Notes:
+# - Per-Device Isolation: Each device installation creates one IAM User with isolated credentials
+# - Key Swap Pattern: Bootstrap keys (CloudFormation only) are replaced with runtime keys (S3-only) after stack creation
+# - Object Lock Governance: Allows per-device override if needed; tracks have 100-year retention set by application
+# - S3 Access Logging: Enabled for audit trail; logs stored in same bucket under logs/s3-access/ prefix
+# - Lifecycle Policies: Diagnostics and access logs expire after 30 days; tracks retain per application-set headers (100 years)
+# See: docs/adr/iam-policy-attachment-per-device-isolation.md for policy attachment design
+# See: docs/technical_discovery/infrastructure.md for full architecture details
+
 Parameters:
   StackName:
     Type: String
@@ -31,6 +40,10 @@ Resources:
             Status: Enabled
             Prefix: diagnostics/
             ExpirationInDays: 30
+          - Id: ExpireS3AccessLogs
+            Status: Enabled
+            Prefix: logs/s3-access/
+            ExpirationInDays: 30
 
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
@@ -38,6 +51,16 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
+      # S3 Access Logging: Audit trail of bucket access
+      # Logs are stored in the same bucket under logs/s3-access/ prefix
+      # Expired after 30 days via lifecycle policy (see below)
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LocusDataBucket
+        LogFilePrefix: logs/s3-access/
+
+  # Runtime User: One per device for isolated credentials
+  # Policy is attached directly to this user (not via group/role)
+  # See: docs/adr/iam-policy-attachment-per-device-isolation.md
   LocusUser:
     Type: AWS::IAM::User
     Properties:
@@ -48,6 +71,12 @@ Resources:
     Properties:
       UserName: !Ref LocusUser
 
+  # Runtime Credentials Policy: Least-privilege S3-only access
+  # Attached directly to LocusUser (one per device isolation model)
+  # Actions limited to: PutObject, GetObject, ListBucket on this bucket only
+  # Note: CKV_AWS_40 (attach to groups/roles) is intentionally not followed here
+  # because per-device isolation uses direct user attachment, not group sharing.
+  # Suppressed in verify_security.sh - see docs/adr/iam-policy-attachment-per-device-isolation.md
   LocusPolicy:
     Type: AWS::IAM::Policy
     Properties:
