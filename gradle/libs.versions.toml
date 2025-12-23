@@ -15,7 +15,7 @@ activity-compose = "1.8.2"
 compose-bom = "2024.02.00"
 
 # Architecture
-hilt = "2.50"
+hilt = "2.51"
 coroutines = "1.7.3"
 work-runtime-ktx = "2.9.0"
 

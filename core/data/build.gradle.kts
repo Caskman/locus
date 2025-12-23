@@ -1,29 +1,11 @@
 plugins {
-    alias(libs.plugins.androidLibrary)
-    alias(libs.plugins.kotlinAndroid)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ktlint)
+    id("com.locus.android-library")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
     namespace = "com.locus.core.data"
-    compileSdk = 34
-
-    defaultConfig {
-        minSdk = 28
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 }
 
 dependencies {
