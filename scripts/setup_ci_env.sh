@@ -12,7 +12,7 @@ echo "Python 3 is available."
 
 # 2. Install Python Dependencies
 echo "Installing Python dependencies from scripts/requirements.txt..."
-pip install -r scripts/requirements.txt
+python3 -m pip install -r scripts/requirements.txt
 echo "Dependencies installed."
 
 # 3. Verify Trufflehog
