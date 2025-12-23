@@ -1,11 +1,11 @@
-package com.locus.core.data
+package com.locus.core.data.repository
 
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import com.locus.core.domain.AppVersion
-import com.locus.core.domain.AppVersionRepository
 import com.locus.core.domain.LocusResult
+import com.locus.core.domain.repository.AppVersionRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
