@@ -13,7 +13,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@b4ffde65f4633668828c08008afc50704461cea3 # v4.1.1
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         fetch-depth: 0
 
