@@ -17,7 +17,8 @@ echo "Dependencies installed."
 
 # 3. Verify Trufflehog
 if ! command -v trufflehog &> /dev/null; then
-    echo "Error: trufflehog is not installed. Please install trufflehog."
+    echo "Error: trufflehog is not installed."
+    echo "Please install it: https://github.com/trufflesecurity/trufflehog"
     exit 1
 fi
 echo "trufflehog is available."
@@ -28,6 +29,15 @@ if ! command -v java &> /dev/null; then
     exit 1
 fi
 echo "Java is available."
+
+# 5. Verify Android SDK
+if [ -z "$ANDROID_HOME" ]; then
+    echo "Error: ANDROID_HOME is not set."
+    echo "Please install the Android SDK and Command Line Tools."
+    echo "Set ANDROID_HOME to your SDK location."
+    exit 1
+fi
+echo "ANDROID_HOME is set: $ANDROID_HOME"
 
 # 5. Verify AWS CLI (required for infrastructure audit)
 if ! command -v aws &> /dev/null; then
