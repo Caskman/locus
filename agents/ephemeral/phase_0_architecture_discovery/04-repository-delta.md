@@ -24,6 +24,7 @@
 | `scripts/setup_ci_env.sh` | Script | Env Bootstrap | New |
 | `scripts/run_local_validation.sh` | Script | Local CI Wrapper | New |
 | `scripts/verify_security.sh` | Script | Security Scanner | New |
+| `scripts/audit_infrastructure.sh` | Script | Infra Audit (Tier 4) | New |
 | `scripts/build_artifacts.sh` | Script | Build Wrapper | New |
 | `scripts/requirements.txt` | Config | Python Deps | New |
 | `.github/workflows/validation.yml` | CI | GitHub Actions | New |

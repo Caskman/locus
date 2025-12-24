@@ -51,7 +51,34 @@ fi
 echo "Environment setup complete."
 ```
 
-## 2. `scripts/requirements.txt`
+## 2. `scripts/verify_security.sh`
+
+**Purpose:** Runs Tier 3 security checks. This includes secret scanning (TruffleHog) and SAST (Semgrep).
+
+**Inputs:**
+- `scripts/trufflehog_excludes.txt` (Optional)
+
+**Outputs:**
+- Exit Code: 0 (Secure), Non-zero (Vulnerability Found)
+
+**Logic:**
+```bash
+#!/bin/bash
+set -e
+
+echo "Running TruffleHog..."
+# Use --no-update to run faster in local/CI if managed externally, or let it update.
+# We assume trufflehog is in PATH.
+trufflehog filesystem . --exclude-paths scripts/trufflehog_excludes.txt --fail
+
+echo "Running Semgrep..."
+# Uses the default registry configuration
+semgrep scan --config=p/default .
+
+echo "Security Check Passed!"
+```
+
+## 3. `scripts/requirements.txt`
 
 **Purpose:** Defines Python dependencies for automation.
 
@@ -64,7 +91,7 @@ semgrep>=1.50.0                       # SAST security scanning
 requests>=2.31.0                      # HTTP client library
 ```
 
-## 3. `scripts/run_local_validation.sh`
+## 4. `scripts/run_local_validation.sh`
 
 **Purpose:** The primary "Gatekeeper" script. Runs all Tier 1 (Static) and Tier 2 (Unit) checks. This is what the Developer runs before pushing, and what CI runs on PRs.
 
@@ -86,12 +113,13 @@ echo "Running Lint..."
 echo "Running Unit Tests..."
 ./gradlew testDebugUnitTest
 
-# Future: Add Detekt or other static analysis here
+echo "Running Security Checks..."
+./scripts/verify_security.sh
 
 echo "Validation Successful!"
 ```
 
-## 4. `scripts/build_artifacts.sh`
+## 5. `scripts/build_artifacts.sh`
 
 **Purpose:** Generates the distributable binaries.
 

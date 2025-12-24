@@ -33,6 +33,8 @@ espresso = "3.5.1"
 mockk = "1.13.9"
 truth = "1.4.0"
 turbine = "1.0.0"
+kover = "0.7.6"
+archUnit = "1.2.1"
 
 [libraries]
 # Android Core
@@ -66,6 +68,7 @@ mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "moc
 truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+archunit-junit4 = { group = "com.tngtech.archunit", name = "archunit-junit4", version.ref = "archUnit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -74,6 +77,7 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 [bundles]
 compose = ["androidx-compose-ui", "androidx-compose-ui-graphics", "androidx-compose-ui-tooling-preview", "androidx-compose-material3"]
@@ -94,8 +98,11 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.kover) apply false
 }
 ```
+
+**Note:** `settings.gradle.kts` must apply the `foojay-resolver-convention` plugin (v0.8.0) to ensure JDK 17 availability.
 
 ### `:app` (Android Application)
 
@@ -121,6 +128,10 @@ android {
         versionName = "0.0.1" // Logic to fetch from git to be added
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 
     // Build Types & Flavors defined here (standard/foss)

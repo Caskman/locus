@@ -78,9 +78,10 @@
 
 - `scripts/setup_ci_env.sh`: Bootstraps Python & Tools.
 - `scripts/run_local_validation.sh`: Runs Lint, Detekt, Tests.
+- `scripts/audit_infrastructure.sh`: Runs Tier 4 infrastructure audit (AWS CLI).
 - `scripts/build_artifacts.sh`: Builds AAB/APK.
 - `scripts/verify_security.sh`: Runs Checkov/Trufflehog (stubs/placeholders initially if tools missing).
-- `scripts/requirements.txt`: Python dependencies (`boto3`, `taskcat`).
+- `scripts/requirements.txt`: Python dependencies (`boto3`, `cfn-lint`, etc.).
 
 ## Open Questions
 - None.
