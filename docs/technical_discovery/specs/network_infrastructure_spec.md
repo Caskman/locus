@@ -73,16 +73,21 @@ All AWS clients must be configured with consistent timeouts, retry policies, and
 ### 2.2. Error Classification
 The network layer must strictly classify errors to prevent battery drain from useless retries or data loss from incorrect aborts.
 
+**Reference:** `agents/ephemeral/phase1-deep-dive/error-handling-strategy.md`
+
 *   **Transient (Retry Allowed):**
     *   HTTP `408` (Request Timeout)
     *   HTTP `429` (Too Many Requests)
     *   HTTP `5xx` (Server Errors: 500, 502, 503, 504)
     *   `IOException` / `SocketTimeoutException` (Network Connectivity)
+    *   `ProvisioningError.Wait` (ROLLBACK_IN_PROGRESS)
 *   **Fatal (Abort Immediately):**
     *   HTTP `400` (Bad Request)
     *   HTTP `401` (Unauthorized) - Triggers Auth Alert.
     *   HTTP `403` (Forbidden) - Triggers Auth Alert.
     *   HTTP `404` (Not Found) - Bucket or Path missing.
+    *   `ProvisioningError.StackExists`
+    *   `ProvisioningError.Permissions`
 
 ### 2.3. Traffic Guardrail (Circuit Breaker)
 To prevent unexpected costs or battery drain due to infinite loops or aggressive syncing, the network layer must enforce a strict daily quota.

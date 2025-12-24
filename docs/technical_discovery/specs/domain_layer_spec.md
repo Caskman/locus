@@ -144,16 +144,21 @@ data class LogFilter(
 ```
 
 ### 3.3. AuthRepository
-Manages the complexity of "Bootstrap" vs. "Runtime" credentials.
+Manages the complexity of "Bootstrap" vs. "Runtime" credentials and the granular provisioning state.
 
 ```kotlin
 interface AuthRepository {
     // State Check
-    fun getAuthState(): Flow<AuthState> // Uninitialized -> Bootstrap -> Runtime
+    fun getAuthState(): Flow<AuthState> // Uninitialized -> SetupPending -> Authenticated
+
+    // Provisioning State (Granular for UI)
+    fun getProvisioningState(): Flow<ProvisioningState>
+    suspend fun updateProvisioningState(state: ProvisioningState)
 
     // Actions
     suspend fun saveBootstrapCredentials(creds: BootstrapCredentials): LocusResult<Unit>
     suspend fun promoteToRuntimeCredentials(creds: RuntimeCredentials): LocusResult<Unit>
+    suspend fun replaceWithAdminCredentials(creds: RuntimeCredentials): LocusResult<Unit>
     suspend fun clearBootstrapCredentials(): LocusResult<Unit>
     suspend fun getRuntimeCredentials(): LocusResult<RuntimeCredentials>
 }
@@ -163,6 +168,8 @@ sealed class AuthState {
     object SetupPending : AuthState() // Has Bootstrap
     object Authenticated : AuthState() // Has Runtime
 }
+
+// See 'provisioning-state-machine.md' for ProvisioningState definition
 ```
 
 ### 3.4. ConfigurationRepository
@@ -334,6 +341,14 @@ open class DomainException(message: String) : Exception(message)
 class NetworkException(message: String) : DomainException(message)
 class AuthException(message: String) : DomainException(message)
 class BatteryCriticalException : DomainException("Battery too low for operation")
+// Provisioning Errors
+sealed class ProvisioningError(message: String) : DomainException(message) {
+    object StackExists : ProvisioningError("Device name taken")
+    object Permissions : ProvisioningError("Insufficient AWS Permissions")
+    object Quota : ProvisioningError("AWS Quota Exceeded")
+    object DeploymentFailed : ProvisioningError("Deployment Rolled Back")
+    object Wait : ProvisioningError("Wait required")
+}
 ```
 
 ## 6. Workflow Diagrams
