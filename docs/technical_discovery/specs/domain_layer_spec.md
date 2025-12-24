@@ -144,18 +144,32 @@ data class LogFilter(
 ```
 
 ### 3.3. AuthRepository
-Manages the complexity of "Bootstrap" vs. "Runtime" credentials.
+Manages the complexity of "Bootstrap" vs. "Runtime" credentials and the granular provisioning state.
 
 ```kotlin
 interface AuthRepository {
     // State Check
-    fun getAuthState(): Flow<AuthState> // Uninitialized -> Bootstrap -> Runtime
+    fun getAuthState(): Flow<AuthState> // Uninitialized -> SetupPending -> Authenticated
+
+    // Provisioning State (Granular for UI)
+    fun getProvisioningState(): Flow<ProvisioningState>
+    suspend fun updateProvisioningState(state: ProvisioningState)
+
+    // Validation
+    suspend fun validateBucket(bucketName: String): LocusResult<BucketValidationStatus>
 
     // Actions
     suspend fun saveBootstrapCredentials(creds: BootstrapCredentials): LocusResult<Unit>
     suspend fun promoteToRuntimeCredentials(creds: RuntimeCredentials): LocusResult<Unit>
+    suspend fun replaceWithAdminCredentials(creds: RuntimeCredentials): LocusResult<Unit>
     suspend fun clearBootstrapCredentials(): LocusResult<Unit>
     suspend fun getRuntimeCredentials(): LocusResult<RuntimeCredentials>
+}
+
+sealed class BucketValidationStatus {
+    object Validating : BucketValidationStatus()
+    object Available : BucketValidationStatus()
+    object Invalid : BucketValidationStatus() // Missing LocusRole tag
 }
 
 sealed class AuthState {
@@ -163,6 +177,8 @@ sealed class AuthState {
     object SetupPending : AuthState() // Has Bootstrap
     object Authenticated : AuthState() // Has Runtime
 }
+
+// See 'provisioning-state-machine.md' for ProvisioningState definition
 ```
 
 ### 3.4. ConfigurationRepository
@@ -331,9 +347,35 @@ sealed class LocusResult<out T> {
 }
 
 open class DomainException(message: String) : Exception(message)
-class NetworkException(message: String) : DomainException(message)
-class AuthException(message: String) : DomainException(message)
+
+sealed class NetworkError(message: String) : DomainException(message) {
+    object Offline : NetworkError("No Internet Connection")
+    object Timeout : NetworkError("Request Timed Out")
+    class Server(message: String) : NetworkError(message)
+    class Generic(message: String) : NetworkError(message)
+}
+
+sealed class AuthError(message: String) : DomainException(message) {
+    object InvalidCredentials : AuthError("Invalid Access Key or Secret Key")
+    object Expired : AuthError("Session Token Expired")
+    object AccessDenied : AuthError("Access Denied")
+    class Generic(message: String) : AuthError(message)
+}
+
+sealed class S3Error(message: String) : DomainException(message) {
+    object BucketNotFound : S3Error("Bucket Not Found")
+    class Generic(message: String) : S3Error(message)
+}
+
 class BatteryCriticalException : DomainException("Battery too low for operation")
+// Provisioning Errors
+sealed class ProvisioningError(message: String) : DomainException(message) {
+    object StackExists : ProvisioningError("Device name taken")
+    object Permissions : ProvisioningError("Insufficient AWS Permissions")
+    object Quota : ProvisioningError("AWS Quota Exceeded")
+    object DeploymentFailed : ProvisioningError("Deployment Rolled Back")
+    object Wait : ProvisioningError("Wait required")
+}
 ```
 
 ## 6. Workflow Diagrams
