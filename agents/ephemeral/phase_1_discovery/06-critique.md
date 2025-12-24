@@ -61,8 +61,8 @@ The discovery flow should be updated to:
 The selected architecture (`Path B`) relies on a **Foreground Service** with the type `dataSync` to keep the app alive during the 3-5 minute CloudFormation provisioning process.
 
 ### Why this is Critical
-1.  **Strict Enforcement:** Android 14+ strictly enforces Foreground Service types. `dataSync` is intended for media/file transfer and has system-imposed timeouts (often ~3 minutes).
-2.  **Process Death:** If the stack creation exceeds the timeout, or if the OS determines "no data is actually syncing" (since the app is mostly just polling an API), the system may kill the service. This catastrophic failure mid-provisioning would leave the user in an inconsistent state.
+1.  **Strict Enforcement:** Android 14+ strictly enforces Foreground Service types. `dataSync` is intended for **data synchronization tasks** (e.g., syncing app data with a backend or cloud storage). While there is no single hardcoded timeout, the system may stop these services if they run for an extended period, show little apparent progress, or operate under resource constraints. Behavior can vary significantly by device and OEM implementation.
+2.  **Process Death:** If the stack creation runs longer than the system or OEM deems acceptable for a `dataSync` operation, or if the OS determines "no data is actually syncing" (since the app is mostly just polling an API), the system may kill the service. This catastrophic failure mid-provisioning would leave the user in an inconsistent state.
 3.  **User Experience:** Relying on the user to "keep the app open" is fragile.
 
 ### Recommendation: WorkManager (Long-Running)
