@@ -34,6 +34,7 @@ Implement the "Validation Pipeline" scripts defined in the deep dive. These scri
     -   `setup_ci_env.sh`: Installs Python requirements, checks Java version.
     -   `run_local_validation.sh`: Runs Lint, Unit Tests, and ArchUnit tests.
     -   `verify_security.sh`: Placeholder/Basic check for secrets.
+    -   `audit_infrastructure.sh`: Runs Tier 4 infrastructure audit using AWS CLI.
     -   `build_artifacts.sh`: Builds AAB/APK.
 -   **Config:** Create `scripts/requirements.txt` for Python dependencies.
 -   **CI:** Create `.github/workflows/validation.yml` that invokes these scripts.
