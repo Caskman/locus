@@ -14,6 +14,7 @@ Occurs during `ProvisioningState.VerifyingBootstrapKeys`.
 | STS | `SignatureDoesNotMatch` | `AuthError.InvalidCredentials` | "The Secret Key is incorrect." | Check input. |
 | STS | `ExpiredToken` | `AuthError.Expired` | "Your Session Token has expired." | Generate new keys. |
 | Network | `UnknownHostException` | `NetworkError.Offline` | "No internet connection." | Check WiFi/Cell. |
+| Network | `SocketTimeoutException` | `NetworkError.Timeout` | "Connection timed out." | Retry. |
 
 ### 2. CloudFormation Deployment (Slow Fail)
 Occurs during `ProvisioningState.DeployingStack` or `WaitingForCompletion`.

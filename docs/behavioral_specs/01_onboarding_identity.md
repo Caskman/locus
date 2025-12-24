@@ -22,6 +22,8 @@
 
 ## System Recovery (Link Existing Store)
 *   **R1.1100** **When** the user selects "Link Existing Store", the system **shall** list all available storage buckets with names starting with the project prefix `locus-`.
+*   **R1.1150** **The** system **shall** asynchronously validate the candidate buckets by verifying the presence of the `LocusRole: DeviceBucket` tag, distinguishing between "Validating", "Available", and "Invalid" states.
+*   **R1.1160** **The** system **shall** prevent the selection of buckets marked as "Invalid".
 *   **R1.1200** **If** no matching stores are found, **then** the system **shall** display a "No Locus stores found" message.
 *   **R1.1300** **When** the user selects an existing store to link, the system **shall** create a **new** unique user identity (Runtime User) for this installation, distinct from any previous users associated with that store.
 *   **R1.1400** **When** linking to an existing store, the system **shall** generate a new, unique `device_id` (UUID) for the current installation to prevent "Split Brain" data collisions with previous installations.

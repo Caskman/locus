@@ -153,6 +153,11 @@ flowchart LR
 ### 4.1. Bootstrap Client (CloudFormation)
 **Interface:** `InfrastructureProvisioner`
 
+*   **Async Tag Validation:**
+    *   **Call:** `GetBucketTagging`.
+    *   **Logic:** Verify that the candidate bucket has the tag `LocusRole=DeviceBucket`.
+    *   **Permissions:** Bootstrap keys must have `s3:GetBucketTagging` and `s3:ListAllMyBuckets`.
+
 *   **Deploy Stack:**
     *   **Call:** `CreateStack`.
     *   **Logic:**

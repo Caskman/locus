@@ -30,26 +30,28 @@ This document defines how Locus handles "Link Existing Store", "Admin Upgrade", 
     *   `IAMUser`: `locus-admin-{StackName}`.
     *   `AccessKey`: For the admin user.
     *   `Policy`:
+        *   **Discovery:** `s3:ListAllMyBuckets` and `s3:GetBucketTagging` on `*` (All Resources). Required to find valid buckets.
         *   **Read-Only:** `s3:ListBucket`, `s3:GetObject` on `*` (All Resources) where `Tag:LocusRole == DeviceBucket`.
         *   **Write:** `s3:PutObject` on `arn:aws:s3:::{TargetBucket}` (To allow the admin device to track itself).
 
 ## Discovery Logic (Link Existing Store)
 
-When the user selects "Link Existing Store", the app must find valid buckets.
+When the user selects "Link Existing Store", the app must find valid buckets. We employ an **Async Tag Validation** strategy to balance speed and accuracy.
 
 **Algorithm:**
-1.  **Credentials:** Use the provided Bootstrap Credentials.
-2.  **API Call:** `s3.listBuckets()`.
-3.  **Client-Side Filter:**
-    *   Iterate through `ListBucketsResponse.buckets`.
-    *   **Keep if:** `bucket.name.startsWith("locus-")`.
-    *   *Note:* We rely on the naming convention for speed and simplicity in Phase 1.
-4.  **UI Presentation:**
-    *   Show list of names (e.g., `locus-data-2024`, `locus-my-archive`).
-    *   User selects one.
-5.  **Provisioning:**
-    *   App deploys `locus-user.yaml`.
-    *   Passes selected name as `TargetBucket`.
+1.  **List (Fast):** Use Bootstrap Credentials to call `s3.listBuckets()`.
+2.  **Filter (Client-Side):** Keep buckets where `name.startsWith("locus-")`.
+3.  **Display (Immediate):** Show the list to the user immediately.
+    *   **State:** All items start as `Validating` (Spinner).
+4.  **Validate (Background):**
+    *   Launch parallel coroutines (one per bucket).
+    *   Call `s3.getBucketTagging(bucketName)`.
+    *   **Check:** Is Tag `LocusRole` == `DeviceBucket`?
+    *   **Update State:**
+        *   If Match -> `Available` (Clickable).
+        *   If Mismatch/Error -> `Invalid` (Disabled/Red).
+5.  **Selection:** User clicks an `Available` bucket.
+6.  **Provisioning:** App deploys `locus-user.yaml` with the selected `TargetBucket`.
 
 ## Device ID Generation (Anti-Split-Brain)
 

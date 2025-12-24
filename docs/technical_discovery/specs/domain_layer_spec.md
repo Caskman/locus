@@ -155,12 +155,21 @@ interface AuthRepository {
     fun getProvisioningState(): Flow<ProvisioningState>
     suspend fun updateProvisioningState(state: ProvisioningState)
 
+    // Validation
+    suspend fun validateBucket(bucketName: String): LocusResult<BucketValidationStatus>
+
     // Actions
     suspend fun saveBootstrapCredentials(creds: BootstrapCredentials): LocusResult<Unit>
     suspend fun promoteToRuntimeCredentials(creds: RuntimeCredentials): LocusResult<Unit>
     suspend fun replaceWithAdminCredentials(creds: RuntimeCredentials): LocusResult<Unit>
     suspend fun clearBootstrapCredentials(): LocusResult<Unit>
     suspend fun getRuntimeCredentials(): LocusResult<RuntimeCredentials>
+}
+
+sealed class BucketValidationStatus {
+    object Validating : BucketValidationStatus()
+    object Available : BucketValidationStatus()
+    object Invalid : BucketValidationStatus() // Missing LocusRole tag
 }
 
 sealed class AuthState {
@@ -338,7 +347,13 @@ sealed class LocusResult<out T> {
 }
 
 open class DomainException(message: String) : Exception(message)
-class NetworkException(message: String) : DomainException(message)
+
+sealed class NetworkError(message: String) : DomainException(message) {
+    object Offline : NetworkError("No Internet Connection")
+    object Timeout : NetworkError("Request Timed Out")
+    class Server(message: String) : NetworkError(message)
+    class Generic(message: String) : NetworkError(message)
+}
 
 sealed class AuthError(message: String) : DomainException(message) {
     object InvalidCredentials : AuthError("Invalid Access Key or Secret Key")
