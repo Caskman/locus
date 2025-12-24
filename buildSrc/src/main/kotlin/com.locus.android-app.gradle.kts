@@ -53,7 +53,11 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.findByName("release")
+            // TODO: Temporary workaround for CI - Only sign if the keystore is present.
+            // Long term we want to enforce signed APKs for all release builds.
+            if (System.getenv("LOCUS_UPLOAD_KEYSTORE_BASE64") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
