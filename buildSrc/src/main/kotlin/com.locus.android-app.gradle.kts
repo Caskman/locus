@@ -8,7 +8,6 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
     id("org.jlleitschuh.gradle.ktlint")
-    id("org.cyclonedx.bom")
     id("com.github.triplet.play")
 }
 
@@ -21,6 +20,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        // Fix for missing dimension strategy when dependencies (like :core:testing)
+        // do not have the 'distribution' flavor dimension.
+        missingDimensionStrategy("distribution", "standard")
     }
 
     flavorDimensions += "distribution"
@@ -30,21 +32,27 @@ android {
         }
         create("foss") {
             dimension = "distribution"
+            // Allow foss builds to consume standard libraries if needed
+            matchingFallbacks.add("standard")
         }
     }
 
     signingConfigs {
         create("release") {
             val keystoreBase64 = System.getenv("LOCUS_UPLOAD_KEYSTORE_BASE64")
-            if (keystoreBase64 != null) {
+            if (!keystoreBase64.isNullOrEmpty()) {
                 // CI Environment: Decode Keystore
-                val keystoreFile = File(System.getenv("RUNNER_TEMP") ?: "/tmp", "upload.jks")
-                val bytes = Base64.getDecoder().decode(keystoreBase64)
-                keystoreFile.writeBytes(bytes)
-                storeFile = keystoreFile
-                storePassword = System.getenv("LOCUS_STORE_PASSWORD")
-                keyAlias = System.getenv("LOCUS_KEY_ALIAS")
-                keyPassword = System.getenv("LOCUS_KEY_PASSWORD")
+                try {
+                    val keystoreFile = File(System.getenv("RUNNER_TEMP") ?: "/tmp", "upload.jks")
+                    val bytes = Base64.getDecoder().decode(keystoreBase64)
+                    keystoreFile.writeBytes(bytes)
+                    storeFile = keystoreFile
+                    storePassword = System.getenv("LOCUS_STORE_PASSWORD")
+                    keyAlias = System.getenv("LOCUS_KEY_ALIAS")
+                    keyPassword = System.getenv("LOCUS_KEY_PASSWORD")
+                } catch (e: Exception) {
+                    println("WARNING: Failed to decode signing keystore: ${e.message}")
+                }
             }
         }
     }
@@ -53,7 +61,11 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.findByName("release")
+            // TODO: Temporary workaround for CI - Only sign if the keystore is present.
+            // Long term we want to enforce signed APKs for all release builds.
+            if (System.getenv("LOCUS_UPLOAD_KEYSTORE_BASE64") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
