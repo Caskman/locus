@@ -1,7 +1,7 @@
 # Materials & Inventory: Phase 1 - Onboarding & Identity
 
 ## Design Pattern
-**Path B: Domain State Machine + Foreground Service**
+**Path C (Enhanced): WorkManager + EncryptedPrefs**
 
 ## Connection Points
 
@@ -31,7 +31,7 @@
     - `RealAuthRepository`: Implements persistence and state management.
     - `EncryptedSharedPreferencesDataSource`: Secure key storage.
     - `CloudFormationDataSource`: Wraps AWS CloudFormation interactions.
-    - `ProvisioningService`: **Foreground Service** that hosts the Use Case execution scope.
+    - `ProvisioningWorker`: **WorkManager Worker** that hosts the Use Case execution scope (Long-Running).
 
 - `:app` - **UI Layer**
     - `OnboardingViewModel`: Observes `AuthRepository`, exposes state to UI.
@@ -52,11 +52,12 @@
 - **Secret Display:** Secret Access Key is masked in the UI.
 
 **System Fit (Android):**
-- **Foreground Service:** Uses a `Notification` ("Locus Setup: Provisioning resources...") to prevent OS killing.
+- **WorkManager:** Uses `setForeground` ("Locus Setup: Provisioning resources...") to prevent OS killing and ensure execution.
 - **Back Stack:** Onboarding Activity is `finish()`ed upon transition to Dashboard to prevent "Back" navigation.
 
 ## Tuning Options
-- `locus-stack.yaml` - The CloudFormation template itself.
+- `locus-stack.yaml` - The CloudFormation template (Main Infrastructure).
+- `locus-access-stack.yaml` - The CloudFormation template (Recovery/Satellite Access).
 - `OnboardingState.LogEntry` - Granularity of user-facing logs.
 
 ## Dependencies
@@ -65,3 +66,4 @@
 - `aws.sdk.kotlin:sts`
 - `aws.sdk.kotlin:s3`
 - `androidx.security:security-crypto` (EncryptedSharedPreferences)
+- `androidx.work:work-runtime-ktx`

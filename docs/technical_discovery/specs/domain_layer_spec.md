@@ -156,6 +156,11 @@ interface AuthRepository {
     suspend fun promoteToRuntimeCredentials(creds: RuntimeCredentials): LocusResult<Unit>
     suspend fun clearBootstrapCredentials(): LocusResult<Unit>
     suspend fun getRuntimeCredentials(): LocusResult<RuntimeCredentials>
+
+    // Recovery Action
+    // Note: Recovery now involves deploying a stack, similar to initial provisioning.
+    // This allows the use case to manage the 'Satellite Stack' deployment logic.
+    suspend fun recoverAccount(bucketName: String, deviceName: String): LocusResult<RuntimeCredentials>
 }
 
 sealed class AuthState {

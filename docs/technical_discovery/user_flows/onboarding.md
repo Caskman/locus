@@ -42,7 +42,7 @@ Now that the app can see the account, the user decides the path.
 2.  **Deploy:** User taps "Deploy Infrastructure".
     *   *Action:* App uses Bootstrap Keys to run CloudFormation.
     *   *Feedback (UI):* A dedicated **Provisioning Progress Screen** displays the current step (e.g., "Creating Storage Stack...", "Generating Runtime Keys...") with a progress bar.
-    *   *Resilience:* Behind the scenes, this process runs in a **Foreground Service** with a visible notification. This ensures the process completes even if the user backgrounds the app or locks the screen.
+    *   *Resilience:* Behind the scenes, this process runs via **WorkManager (Long-Running/Expedited)** with a visible notification. This ensures the process completes reliably even if the user backgrounds the app or locks the screen, complying with Android 14+ policies.
 3.  **Key Swap:**
     *   App creates a new **IAM User** (e.g., `LocusUser_Pixel7`) using the Bootstrap Keys.
     *   App generates an Access Key for this user.
@@ -60,11 +60,12 @@ Now that the app can see the account, the user decides the path.
 ## Path B: Link Existing Store (Recovery)
 
 1.  **Discovery:** App displays a list of detected Locus stores (e.g., `Pixel7`, `iPhone`).
-    *   *Mechanism:* Filters `s3:ListBuckets` for `locus-*` prefix.
+    *   *Mechanism:* Queries **AWS Resource Groups Tagging API** for resources with tag `LocusRole=DeviceBucket`.
 2.  **Selection:** User taps the store they want to link.
 3.  **Key Swap (New User):**
-    *   App creates a **New IAM User** for this device (e.g., `LocusUser_Pixel7_Recovery`).
-    *   *Note:* The app does **not** retrieve old keys from the existing stack. This ensures that the new device has its own unique, revocable credentials without interfering with prior installations.
+    *   App deploys a **Satellite Stack** (`locus-access-stack`) for this device (e.g., `LocusAccess_Pixel7_Recovery`).
+    *   *Mechanism:* Uses CloudFormation to create a managed IAM User, Access Key, and Policy scoped to the existing bucket.
+    *   *Note:* The app does **not** retrieve old keys from the existing stack, nor does it make raw IAM API calls. This ensures all infrastructure is code-managed.
     *   App saves the new Runtime Keys and discards the Bootstrap Keys.
 4.  **New Identity:**
     *   App generates a fresh `device_id` (e.g., `Pixel7_recovery_x9`).

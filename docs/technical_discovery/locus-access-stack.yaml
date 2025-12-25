@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Locus: Satellite Access Stack - Recovery Credentials for Existing Bucket'
+
+# Architecture Notes:
+# - Purpose: Creates a new managed IAM User/Key for an existing bucket during Recovery.
+# - Rationale: Avoids unmanaged "zombie" users created via raw IAM calls.
+# - Scope: Grants access ONLY to the specified existing bucket.
+
+Parameters:
+  StackName:
+    Type: String
+    Description: A unique name for your device/installation (e.g., Pixel7-Recovery).
+    AllowedPattern: "^[a-zA-Z0-9\\-]+$"
+    ConstraintDescription: Must be alphanumeric with hyphens.
+
+  TargetBucketName:
+    Type: String
+    Description: The name of the existing Locus S3 bucket to link to.
+
+Resources:
+  # Recovery User: Managed via this stack
+  LocusUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub "locus-access-${StackName}"
+      Tags:
+        - Key: LocusRole
+          Value: DeviceUser
+        - Key: LocusType
+          Value: Recovery
+
+  LocusAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref LocusUser
+
+  # Access Policy: Strictly scoped to the Target Bucket
+  LocusPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "locus-policy-${StackName}"
+      Users:
+        - !Ref LocusUser
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${TargetBucketName}"
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource:
+              - !Sub "arn:aws:s3:::${TargetBucketName}/*"
+
+Outputs:
+  AccessKeyId:
+    Description: 'Runtime Access Key ID'
+    Value: !Ref LocusAccessKey
+  SecretAccessKey:
+    Description: 'Runtime Secret Access Key'
+    Value: !GetAtt LocusAccessKey.SecretAccessKey

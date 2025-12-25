@@ -7,14 +7,14 @@
 | **R1.300** | Require Session Token | `CredentialInput.kt` (Validation) |
 | **R1.400** | Pre-fill Device Name | `OnboardingViewModel.kt` |
 | **R1.500** | Check name uniqueness | `ProvisionResourcesUseCase.kt` (S3 HeadBucket check) |
-| **R1.600** | Visible background task | `ProvisioningService.kt` (Foreground Notification) |
+| **R1.600** | Visible background task | `ProvisioningWorker.kt` (WorkManager setForeground) |
 | **R1.700** | Use Bootstrap Keys for deployment | `CloudFormationClient.kt` |
 | **R1.800** | Generate Runtime User | `locus-stack.yaml` (IAM User Resource) |
 | **R1.900** | Swap Keys (Bootstrap -> Runtime) | `RealAuthRepository.kt` |
 | **R1.1000**| Fail-safe (No auto-delete) | `ProvisionResourcesUseCase.kt` (Error Handling) |
-| **R1.1100**| List buckets for recovery | `RecoverAccountUseCase.kt` |
+| **R1.1100**| List buckets for recovery | `RecoverAccountUseCase.kt` (Resource Groups Tagging API) |
 | **R1.1200**| "No stores found" message | `OnboardingScreen.kt` |
-| **R1.1300**| Create new Runtime User (Recovery) | `RecoverAccountUseCase.kt` (IAM CreateUser) |
+| **R1.1300**| Create new Runtime User (Recovery) | `RecoverAccountUseCase.kt` (Deploy `locus-access-stack`) |
 | **R1.1400**| Generate unique `device_id` | `EncryptedPrefsDataSource.kt` |
 | **R1.1500**| Lazy Sync (Inventory) | Deferred to Phase 3 (Skeleton stub only) |
 | **R1.1600**| Success Screen (Manual Confirm) | `OnboardingScreen.kt` |

@@ -127,12 +127,22 @@ flowchart TD
 
 *   **Traffic Guardrail:** The Worker checks the daily traffic quota before attempting sync. If `QuotaExceededException` is encountered (or quota check fails), it returns `Result.success()` to prevent immediate WorkManager backoff retries, effectively pausing sync until the next periodic interval (15 mins later) when the quota might be reset (new day).
 
-### 4.2. Manual Sync
+### 4.2. Provisioning Worker (Setup & Recovery)
+**Role:** Manages the long-running setup of AWS CloudFormation stacks.
+**Type:** `CoroutineWorker` (Long-Running / Expedited).
+**Lifecycle:**
+*   Enqueued by UI when user clicks "Deploy".
+*   Calls `setForeground()` immediately to show "Locus Setup: Provisioning resources..." notification.
+*   Runs `ProvisioningUseCase` or `RecoverAccountUseCase`.
+*   Returns `Result.success()` or `Result.failure()`.
+*   **Resilience:** Uses WorkManager's guarantee to survive app backgrounding or process death, strictly adhering to Android 14+ background policies.
+
+### 4.3. Manual Sync
 Triggered by user.
 *   **Input Data:** `workDataOf("force" to true)`.
 *   **Logic:** Executes `PerformSyncUseCase(MANUAL)` which ignores Battery and Traffic Guardrail constraints.
 
-### 4.3. Boot & Update Receivers
+### 4.4. Boot & Update Receivers
 Ensures "Always On" persistence.
 *   **Triggers:** `BOOT_COMPLETED`, `MY_PACKAGE_REPLACED`.
 *   **Logic:**
