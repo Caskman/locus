@@ -39,11 +39,6 @@ keytool -genkeypair \
     -keypass "$KEY_PASSWORD" \
     -dname "CN=Locus Developer, OU=Mobile, O=Locus, L=Unknown, S=Unknown, C=Unknown"
 
-if [ $? -ne 0 ]; then
-    echo "Error: keytool failed to generate keystore."
-    exit 1
-fi
-
 echo ""
 echo "=========================================="
 echo "SUCCESS! Keystore generated."

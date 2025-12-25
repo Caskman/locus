@@ -52,10 +52,10 @@ android {
                     keyAlias = System.getenv("LOCUS_KEY_ALIAS")
                     keyPassword = System.getenv("LOCUS_KEY_PASSWORD")
                 } catch (e: Exception) {
-                    println("WARNING: Failed to decode signing keystore. Ensure LOCUS_UPLOAD_KEYSTORE_BASE64 is a valid Base64 string. Error: ${e.message}")
+                    logger.warn("WARNING: Failed to decode signing keystore. Ensure LOCUS_UPLOAD_KEYSTORE_BASE64 is a valid MIME Base64 string (Base64.getMimeDecoder(), newlines allowed). Error: ${e.message}")
                 }
             } else {
-                println("INFO: LOCUS_UPLOAD_KEYSTORE_BASE64 is not set. Release APKs will be unsigned.")
+                logger.info("INFO: LOCUS_UPLOAD_KEYSTORE_BASE64 is not set. Release APKs will be unsigned.")
             }
         }
     }
