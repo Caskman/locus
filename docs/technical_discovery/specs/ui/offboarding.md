@@ -28,9 +28,13 @@
     *   **Headline:** "Select Stacks to Destroy"
     *   **List:** Checkbox list of found stacks (e.g., `locus-user-pixel7`, `locus-user-oldphone`).
         *   *Label:* Stack Name + Creation Date.
-        *   *Tag Validation:* Only show stacks with `LocusProject=true`.
+        *   *Tag Validation:*
+            *   Show **all** stacks matching the `locus-` prefix.
+            *   Check for `project=locus` tag.
+            *   **If Valid:** Checkbox is enabled and selectable.
+            *   **If Invalid:** Display "Invalid Project Tag" badge; Item is disabled (unselectable).
     *   **Selection Logic:**
-        *   "Select All" / "Deselect All" toggle.
+        *   "Select All" / "Deselect All" toggle (affects only valid stacks).
         *   Current device's stack is pre-selected.
     *   **Action:** "DESTROY [N] STACKS" (Red, Filled Button).
 
@@ -42,7 +46,7 @@
 |  Permanently Delete Data?                        |
 |                                                  |
 |  You are about to delete 2 Stacks and all        |
-|  history associated with them.                   |
+|  data associated with them.                      |
 |                                                  |
 |  This action CANNOT be undone. Data will be      |
 |  lost forever.                                   |
