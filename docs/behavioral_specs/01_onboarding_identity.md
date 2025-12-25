@@ -13,6 +13,7 @@
 ## Credential Validation
 *   **R1.100** **When** the user provides cloud credentials (Access Key ID, Secret Access Key, Session Token), the system **shall** validate them by performing a "Dry Run" check against the identity and storage services.
 *   **R1.150** **When** the user provides credentials, the system **shall** support parsing a structured JSON object (e.g., from CLI output) to automatically populate the required fields.
+*   **R1.160** **If** JSON parsing fails (e.g., malformed JSON, missing fields), **then** the system **shall** surface a non-fatal validation error, **shall not** overwrite existing fields, and **shall not** attempt the "Dry Run" check.
 *   **R1.200** **If** the "Dry Run" check fails (e.g., Invalid Signature, Permission Denied), **then** the system **shall** display a specific error message describing the failure reason and **shall not** proceed to the Choice screen.
 *   **R1.300** **When** validating credentials, the system **shall** require the presence of a Session Token and treat the credentials as temporary.
 
@@ -37,6 +38,7 @@
 
 ## Permissions
 *   **R1.1550** **When** requesting location access, the system **shall** request permissions in two distinct stages (Foreground then Background) if required by the underlying platform constraints.
+*   **R1.1555** **If** the user denies the Foreground permission, **then** the system **shall not** request Background permission and **shall** inform the user that location functionality is unavailable until access is granted.
 *   **R1.1560** **If** the user exits the application during the permission phase, **then** the system **shall** force the user back to the permission request screen upon the next launch ("Permission Trap").
 
 ## Onboarding Completion
