@@ -152,7 +152,6 @@ We employ a "Best Practice" automated release pipeline to publish to Google Play
     *   `standard`: Android App Bundle (`.aab`) for Google Play.
     *   `foss`: Universal APK (`.apk`) for F-Droid/Sideloading.
 2.  **Sign:** Signs artifacts using the Release Keystore injected via secrets.
-3.  **SBOM:** Generate a **Software Bill of Materials (CycloneDX)**.
 
 ### 6.2. Distribution
 *   **Google Play Store (Standard Flavor):**
@@ -163,6 +162,6 @@ We employ a "Best Practice" automated release pipeline to publish to Google Play
 
 *   **GitHub Release (FOSS Flavor):**
     *   **Action:** Creates a GitHub Release.
-    *   **Assets:** Attaches the `foss` APK, `standard` AAB, mapping files, and SBOM.
+    *   **Assets:** Attaches the `foss` APK, `standard` AAB, and mapping files.
     *   **Notes:** Injects the content from the changelog file.
     *   **F-Droid:** This release serves as the source for F-Droid (which pulls the source or binary) and manual users.

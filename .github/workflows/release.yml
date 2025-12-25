@@ -23,7 +23,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@ac2d340dc04d9e1113182899e983b5400c17cda1 # v3.5.0
 
-      # TEMPORARY: Disabled Play Store upload and SBOM generation due to missing secrets/configuration.
       # Switched to building an APK for Standard flavor for GitHub Release instead of AAB.
       - name: Build Standard APK
         env:
