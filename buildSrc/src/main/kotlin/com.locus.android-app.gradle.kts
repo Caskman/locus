@@ -61,10 +61,13 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // TODO: Temporary workaround for CI - Only sign if the keystore is present.
-            // Long term we want to enforce signed APKs for all release builds.
-            if (System.getenv("LOCUS_UPLOAD_KEYSTORE_BASE64") != null) {
-                signingConfig = signingConfigs.getByName("release")
+            // Only sign if the signing config was successfully initialized with a store file.
+            // This handles cases where LOCUS_UPLOAD_KEYSTORE_BASE64 is empty or invalid.
+            val releaseConfig = signingConfigs.getByName("release")
+            if (releaseConfig.storeFile != null) {
+                signingConfig = releaseConfig
+            } else {
+                logger.warn("WARNING: Signing skipped. Keystore file not found or invalid.")
             }
         }
     }
