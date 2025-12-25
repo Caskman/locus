@@ -14,15 +14,16 @@
 
 ## Selected Path
 
-**Picked:** **Path B: Domain State Machine + Foreground Service**
+**Picked:** **Path C (Enhanced): WorkManager + EncryptedPrefs**
 
 **Why:**
-1.  **Resilience is Critical:** Provisioning CloudFormation stacks can take 2-5 minutes. The application must guarantee execution even if the user switches apps or the screen turns off. A Foreground Service with a persistent notification is the standard Android pattern for this.
-2.  **Security:** We can keep the sensitive "Bootstrap Keys" in memory (within the Service/Repository scope) and pass them directly to the AWS SDK, avoiding the need to serialize them to disk as `WorkManager` `Data` would require.
-3.  **Tombstoning:** By persisting the detailed "Provisioning Log" to a local file/db via the Repository, we ensure that if the app *does* crash, the user sees the exact error upon relaunch (The "Setup Trap"), rather than a generic "Something went wrong".
+1.  **Android 14+ Compliance:** Foreground Services (specifically `dataSync`) have strict system timeouts and usage requirements that a CloudFormation polling loop might violate, leading to process death. `WorkManager` (Long-Running/Expedited) is the platform-sanctioned way to guarantee execution for deferred tasks.
+2.  **Security Mitigation:** Instead of serializing "Bootstrap Keys" into `WorkRequest` data, we will store them immediately in `EncryptedSharedPreferences` and pass only a reference/flag to the Worker. This mitigates the original security concern of Path C.
+3.  **Resilience:** WorkManager handles retries, backoff, and process resurrection natively, offering superior stability over a manual Foreground Service implementation.
+4.  **Tombstoning:** The Worker will write logs to the same local file-based repository as Path B, ensuring the "Setup Trap" and error visibility remain intact.
 
 **Risks we're accepting:**
-- **Service Complexity:** We must carefully manage the Service lifecycle (starting, stopping, binding) and ensure it plays nicely with Android 14+ restrictions.
+- **Feedback Latency:** We must ensure the Worker updates the local repository frequently so the UI (observing the repo) feels responsive.
 - **State Synchronization:** The UI must reactively observe the Repository state, not the Service directly, to decouple the View from the Process.
 
 **Deferred Choices:**

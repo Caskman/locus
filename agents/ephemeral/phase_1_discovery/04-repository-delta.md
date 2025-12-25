@@ -14,8 +14,9 @@
 | `src/main/kotlin/.../auth/RealAuthRepository.kt` | Repository | Implementation with StateFlow | New |
 | `src/main/kotlin/.../auth/local/EncryptedPrefsDataSource.kt` | DataSource | Secure Key Storage | New |
 | `src/main/kotlin/.../auth/remote/CloudFormationClient.kt` | DataSource | AWS SDK Wrapper | New |
-| `src/main/kotlin/.../auth/service/ProvisioningService.kt` | Service | Foreground Service for long tasks | New |
-| `src/main/assets/locus-stack.yaml` | Asset | CloudFormation Template | New |
+| `src/main/kotlin/.../auth/worker/ProvisioningWorker.kt` | Worker | WorkManager Worker for long tasks | New |
+| `src/main/assets/locus-stack.yaml` | Asset | CloudFormation Template (Main) | New |
+| `src/main/assets/locus-access-stack.yaml` | Asset | CloudFormation Template (Recovery) | New |
 | **App Layer** (`:app`) | | | |
 | `src/main/kotlin/.../onboarding/OnboardingViewModel.kt` | ViewModel | Glue between UI and Repo | New |
 | `src/main/kotlin/.../onboarding/OnboardingScreen.kt` | UI | Main flow coordinator | New |
@@ -45,8 +46,8 @@
       EncryptedPrefsDataSource.kt
     /remote
       CloudFormationClient.kt
-    /service
-      ProvisioningService.kt
+    /worker
+      ProvisioningWorker.kt
 
 :app
   /features/onboarding
@@ -60,8 +61,6 @@
 
 **AndroidManifest.xml (`:core:data` / `:app`)**
 ```xml
-<service
-    android:name=".auth.service.ProvisioningService"
-    android:foregroundServiceType="dataSync"
-    android:exported="false" />
+<!-- WorkManager is auto-configured via App Startup, but we may need -->
+<!-- specific configuration for expedited work if customizing initialization -->
 ```

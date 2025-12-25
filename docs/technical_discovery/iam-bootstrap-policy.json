@@ -21,7 +21,8 @@
                 "iam:CreateUser",
                 "iam:GetUser",
                 "iam:CreateAccessKey",
-                "iam:PutUserPolicy"
+                "iam:PutUserPolicy",
+                "tag:GetResources"
             ],
             "Resource": "*"
         }
