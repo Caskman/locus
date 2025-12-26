@@ -51,7 +51,7 @@ interface AuthRepository {
     /**
      * Replaces existing runtime credentials (e.g., key rotation).
      */
-    suspend fun replaceWithAdminCredentials(creds: RuntimeCredentials): LocusResult<Unit>
+    suspend fun replaceRuntimeCredentials(creds: RuntimeCredentials): LocusResult<Unit>
 
     /**
      * Clears any stored Bootstrap Credentials (security cleanup).
