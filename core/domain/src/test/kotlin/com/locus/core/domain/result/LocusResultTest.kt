@@ -16,7 +16,7 @@ class LocusResultTest {
     @Test
     fun `failure creates Failure instance with correct error`() {
         val exception = RuntimeException("oops")
-        val result = LocusResult.Failure(exception)
+        val result: LocusResult<String> = LocusResult.Failure(exception)
         assertThat(result.isSuccess).isFalse()
         assertThat(result.isFailure).isTrue()
         assertThat(result.getOrNull()).isNull()
@@ -27,7 +27,8 @@ class LocusResultTest {
     fun `domain exception can be used in failure`() {
         val exception = DomainException.NetworkError.Offline
         val result = LocusResult.Failure(exception)
-        assertThat(result.exceptionOrNull()).isInstanceOf(DomainException.NetworkError::class.java)
-        assertThat((result.exceptionOrNull() as DomainException.NetworkError)).isEqualTo(DomainException.NetworkError.Offline)
+        val error: Throwable? = result.exceptionOrNull()
+        assertThat(error).isInstanceOf(DomainException.NetworkError::class.java)
+        assertThat(error as? DomainException.NetworkError).isEqualTo(DomainException.NetworkError.Offline)
     }
 }
