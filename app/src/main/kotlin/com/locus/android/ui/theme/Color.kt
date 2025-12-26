@@ -26,11 +26,11 @@ val LightColorScheme =
 // Material 3 Dark Scheme Container
 val DarkColorScheme =
     androidx.compose.material3.darkColorScheme(
-        primary = LocusBlue,
+        primary = LocusBlueLight,
         onPrimary = Color.Black,
         primaryContainer = LocusBlueDark,
         onPrimaryContainer = Color.White,
-        secondary = LocusBlue,
+        secondary = LocusBlueLight,
         // Monochromatic fallback
         onSecondary = Color.Black,
         error = LocusRed,
