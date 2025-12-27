@@ -27,9 +27,12 @@ Execute these refactoring operations using your IDE or terminal before implement
 **Goal:** Decouple Repositories from concrete AWS Clients.
 
 *   **File:** `core/data/src/main/kotlin/com/locus/core/data/source/remote/aws/InfrastructureProvisioner.kt`
-    *   Interface: `createStack`, `describeStack`, `getBucketTags`.
+    *   Interface: `createStack(name: String): LocusResult<StackOutputs>` (Encapsulates polling).
+    *   Interface: `findLocusBucket(): LocusResult<List<String>>` (Uses Bootstrap Credentials for Discovery).
+    *   **Note:** `getBucketTags` is internal to validation logic, not part of the public VM interface.
 *   **File:** `core/data/src/main/kotlin/com/locus/core/data/source/remote/aws/RemoteStorageInterface.kt`
-    *   Interface: `listBuckets`. (Note: `uploadTrack` is deferred to Phase 3/Task).
+    *   Interface: `uploadTrack`. (Deferred to Phase 3/Task, but interface can exist).
+    *   **Note:** `listBuckets` removed from here as it belongs to Bootstrap/Recovery flow.
 
 ### Step 3: Implement Dynamic Credentials Provider
 **Goal:** Allow S3Client to use keys stored in `SecureStorageDataSource`.
@@ -50,25 +53,36 @@ Execute these refactoring operations using your IDE or terminal before implement
     *   Uses `StaticCredentialsProvider`.
     *   Region: Hardcoded `us-east-1`.
     *   Reads `locus-stack.yaml` from `assets`.
-    *   Implements `createStack` (with `CAPABILITY_NAMED_IAM`), `describeStack` (polling logic), `getBucketTags`.
+    *   **Implements `createStack`:**
+        *   Calls `CreateStack`.
+        *   **Internally manages polling loop** (calling `DescribeStacks` every 5s) until `CREATE_COMPLETE` or Failure.
+        *   Returns `LocusResult`.
+    *   **Implements `findLocusBucket`:**
+        *   Uses `s3:ListAllMyBuckets` (via S3Client or directly if possible, but likely needs a temporary S3 client with Bootstrap creds) or `tag:GetResources` if permissible. *Refinement:* Since this client holds Bootstrap Creds, it can instantiate a temporary S3Client to list buckets or tags.
 
 ### Step 5: Implement Runtime Client (S3)
 **Goal:** Implement `RemoteStorageInterface` using AWS SDK.
 
 *   **File:** `core/data/src/main/kotlin/com/locus/core/data/source/remote/aws/S3Client.kt`
 *   **Logic:**
-    *   Injects `LocusCredentialsProvider`.
+    *   Injects `LocusCredentialsProvider` (Runtime Keys).
     *   Region: Configurable (passed in methods or config).
-    *   Implements `listBuckets` (for Account Recovery).
+    *   Implements `uploadTrack` (stub or logic).
+    *   **Note:** Does NOT implement `listBuckets` for recovery.
 
 ### Step 6: Dependency Injection
-**Goal:** Provide clients via Hilt.
+**Goal:** Provide clients via Hilt with correct scoping.
 
-*   **File:** `core/data/src/main/kotlin/com/locus/core/data/di/NetworkModule.kt`
-*   **Logic:**
-    *   `@Provides` `InfrastructureProvisioner`.
-    *   `@Provides` `RemoteStorageInterface`.
-    *   `@Provides` `LocusCredentialsProvider`.
+*   **File:** `core/data/src/main/kotlin/com/locus/core/data/di/BootstrapModule.kt`
+    *   **Scope:** `InstallIn(ViewModelComponent::class)`
+    *   **Logic:** `@Provides` `InfrastructureProvisioner` (CloudFormationClient).
+*   **File:** `core/data/src/main/kotlin/com/locus/core/data/di/RuntimeModule.kt`
+    *   **Scope:** `InstallIn(SingletonComponent::class)`
+    *   **Logic:**
+        *   `@Provides` `RemoteStorageInterface` (S3Client).
+        *   `@Provides` `LocusCredentialsProvider`.
+*   **File:** `core/data/src/main/kotlin/com/locus/core/data/di/NetworkModule.kt` (Optional/Shared)
+    *   `@Provides` Shared components like `OkHttpClient` or JSON configuration if needed.
 
 ### Step 7: Testing
 **Goal:** Verify behavior with Mockk.
@@ -76,8 +90,9 @@ Execute these refactoring operations using your IDE or terminal before implement
 *   **File:** `core/data/src/test/kotlin/com/locus/core/data/source/remote/aws/CloudFormationClientTest.kt`
 *   **File:** `core/data/src/test/kotlin/com/locus/core/data/source/remote/aws/S3ClientTest.kt`
 *   **Logic:**
-    *   Mock the underlying AWS SDK clients directly with Mockk (they are interfaces), or abstract the logic enough to test the flow.
-    *   **Note:** AWS SDK for Kotlin v2 clients are interface-based, so they can be mocked directly with Mockk without special dynamic mocking; focus tests on the surrounding logic and interactions with these mocked clients.
+    *   Mock the underlying AWS SDK clients directly with Mockk.
+    *   Verify `createStack` handles polling correctly (e.g., mocks returning IN_PROGRESS then COMPLETE).
+    *   Verify `findLocusBucket` calls the correct list/tag API.
 
 ## Validation Strategy
 *   **Compilation:** Ensure `:core:data` compiles with new dependencies.
