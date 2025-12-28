@@ -29,6 +29,8 @@ dependencies {
 
     // AWS
     implementation(libs.aws.sdk.s3)
+    implementation(libs.aws.sdk.cloudformation)
+    implementation(libs.aws.sdk.sts)
 
     // DataStore & Security
     implementation(libs.androidx.datastore)
