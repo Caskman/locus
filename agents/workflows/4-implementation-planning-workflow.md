@@ -9,7 +9,7 @@ Develop actionable implementation plans by transforming task breakdowns into exe
 - **Analysis-driven** - Analyze requirements deeply to form solid recommendations
 - **Proactive, not reactive** - Recommend the best path forward rather than asking open-ended questions
 - **Requirements-driven** - Ensure all implementation work traces back to documented spec behaviors
-- **Plan, don't Implement** - The goal is a plan document, not code.
+- **Plan, don't implement** - The goal is a plan document, not code.
 
 ## Outcomes (Definition of Done)
 
