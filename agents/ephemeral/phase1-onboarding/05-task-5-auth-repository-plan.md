@@ -53,23 +53,34 @@ Implement the `AuthRepository` in the Data Layer to serve as the central broker 
   - `clearBootstrapCredentials`: Delete Bootstrap.
 - **Validation Logic (Ephemeral):**
   - `validateBucket(bucketName)`:
-    1. Get Bootstrap Creds from Storage.
-    2. `clientFactory.createBootstrapS3Client(creds).use { client -> ... }`
-    3. `client.listBuckets()` (Check existence) -> `client.getBucketTagging()` (Check `LocusRole: DeviceBucket`).
-    4. Return `Available`, `Validating`, or `Invalid`.
+    1. Get Bootstrap Creds from Storage. If missing, return `Invalid` immediately.
+    2. Emit `Validating` state to indicate network check is in progress.
+    3. `clientFactory.createBootstrapS3Client(creds).use { client -> ... }`
+    4. **Bucket Existence:** Call `client.listBuckets()`.
+       - If bucket is not found or access is denied, return `Invalid`.
+    5. **Tag Validation:** Call `client.getBucketTagging(bucketName)`.
+       - Check for `LocusRole: DeviceBucket` tag.
+       - If tag set is missing, malformed, or tag is absent, return `Invalid`.
+    6. **Outcome:**
+       - If all checks pass, return `Available`.
+       - For any other error (network, parsing, etc.), return `Invalid`.
 - **Recovery Logic (Ephemeral):**
   - `scanForRecoveryBuckets()`:
     1. Get Bootstrap Creds.
     2. `clientFactory.createBootstrapS3Client(creds).use { client -> ... }`
-    3. `client.listBuckets()` -> Filter list client-side for `locus-` prefix.
+    3. `client.listBuckets()` -> Filter list client-side for bucket names that start with the `locus-` prefix using a **case-sensitive comparison**.
     4. Return `LocusResult<List<String>>` containing candidate bucket names as plain strings.
     5. **Note:** Perform no additional validation (e.g., tags or stack metadata) at this stage to avoid N+1 network calls. Deeper validation is delegated to `validateBucket` or `recoverAccount`.
   - `recoverAccount(bucketName, deviceName)`:
     1. Get Bootstrap Creds.
     2. `clientFactory.createBootstrapS3Client(creds).use { client -> ... }`
-    3. `client.getBucketTagging(bucketName)` -> Extract `aws:cloudformation:stack-name`.
+    3. **Stack Name Extraction:** Call `client.getBucketTagging(bucketName)`.
+       - Extract `aws:cloudformation:stack-name`.
+       - If tag is missing/empty or call fails (e.g., `NoSuchTagSet`), return `LocusResult.Failure` (e.g., `RecoveryError.MissingCloudFormationStackTag`).
     4. `clientFactory.createBootstrapCloudFormationClient(creds).use { cfClient -> ... }`
-    5. `cfClient.describeStacks(stackName)` -> Parse Outputs for `AccessKeyId`, `SecretAccessKey`.
+    5. **Stack Output Parsing:** Call `cfClient.describeStacks(stackName)`.
+       - Parse Outputs for `AccessKeyId` and `SecretAccessKey`.
+       - If `describeStacks` fails or outputs are missing required keys, return `LocusResult.Failure` (e.g., `RecoveryError.InvalidStackOutputs`).
     6. Return `RuntimeCredentials`.
 
 ### Step 4: Configure Dependency Injection
