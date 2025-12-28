@@ -46,6 +46,13 @@ sealed class DomainException(
     // Battery Errors
     data object BatteryCriticalException : DomainException("Battery level is critical")
 
+    // Recovery Errors
+    sealed class RecoveryError(message: String) : DomainException(message) {
+        data object MissingStackTag : RecoveryError("Bucket missing stack name tag")
+
+        data object InvalidStackOutputs : RecoveryError("Stack outputs missing required credentials")
+    }
+
     // Provisioning Errors
     sealed class ProvisioningError(message: String? = null, cause: Throwable? = null) :
         DomainException(message, cause) {

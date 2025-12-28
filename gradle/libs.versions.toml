@@ -27,7 +27,7 @@ okhttp = "4.12.0"
 kotlinx-serialization = "1.6.2"
 datastore = "1.0.0"
 tink = "1.8.0"
-aws-sdk-kotlin = "1.0.42" # Example stable version
+aws-sdk-kotlin = "1.0.73" # Example stable version
 
 # Testing
 junit = "4.13.2"
