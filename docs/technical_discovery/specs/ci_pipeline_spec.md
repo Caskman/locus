@@ -78,7 +78,7 @@ The pipeline executes checks in order of speed and cost.
     *   **Simulated Scenarios:** Robolectric tests for Non-Functional requirements (Battery Safety, Network Backoff).
 *   **Mutation Testing:**
     *   **Scope:** Domain Layer (`:core:domain`).
-    *   **Tool:** PITest (Pitest).
+    *   **Tool:** Pitest.
     *   **Command:** `./gradlew :core:domain:pitest`
     *   **Objective:** Verify that tests are actually killing code mutations (ensuring test quality, not just line coverage).
 *   **Architecture Governance:**
