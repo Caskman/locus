@@ -225,6 +225,7 @@ class AuthRepositoryImplTest {
                     stacks =
                         listOf(
                             Stack {
+                                stackId = "arn:aws:cloudformation:us-east-1:123456789012:stack/locus-stack/uuid"
                                 outputs =
                                     listOf(
                                         Output {
@@ -251,5 +252,6 @@ class AuthRepositoryImplTest {
             assertThat(creds.accessKeyId).isEqualTo("AKIA_RUNTIME")
             assertThat(creds.secretAccessKey).isEqualTo("SECRET_RUNTIME")
             assertThat(creds.bucketName).isEqualTo("locus-bucket-recovered")
+            assertThat(creds.accountId).isEqualTo("123456789012")
         }
 }
