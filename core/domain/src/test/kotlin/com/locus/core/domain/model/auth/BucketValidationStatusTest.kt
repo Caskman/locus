@@ -16,6 +16,6 @@ class BucketValidationStatusTest {
 
     @Test
     fun `Invalid state exists`() {
-        assertThat(BucketValidationStatus.Invalid).isInstanceOf(BucketValidationStatus::class.java)
+        assertThat(BucketValidationStatus.Invalid("test reason")).isInstanceOf(BucketValidationStatus::class.java)
     }
 }
