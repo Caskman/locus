@@ -92,17 +92,15 @@ class AuthRepositoryImpl
                 client.use { s3 ->
                     // Check Existence
                     try {
-                        val headRequest = HeadBucketRequest { this.bucket = bucketName }
-                        s3.headBucket(headRequest)
+                        s3.headBucket { bucket = bucketName }
                     } catch (e: Exception) {
                         return LocusResult.Success(BucketValidationStatus.Invalid("Bucket not found or access denied"))
                     }
 
                     // Check Tags
-                    val taggingRequest = GetBucketTaggingRequest { this.bucket = bucketName }
                     val tagging =
                         try {
-                            s3.getBucketTagging(taggingRequest)
+                            s3.getBucketTagging { bucket = bucketName }
                         } catch (e: Exception) {
                             return LocusResult.Success(BucketValidationStatus.Invalid("Failed to retrieve bucket tags"))
                         }
@@ -193,10 +191,9 @@ class AuthRepositoryImpl
                 val s3Client = awsClientFactory.createBootstrapS3Client(creds)
                 val stackName =
                     s3Client.use { s3 ->
-                        val taggingRequest = GetBucketTaggingRequest { this.bucket = bucketName }
                         val tagging =
                             try {
-                                s3.getBucketTagging(taggingRequest)
+                                s3.getBucketTagging { bucket = bucketName }
                             } catch (e: Exception) {
                                 return LocusResult.Failure(DomainException.RecoveryError.MissingStackTag)
                             }
@@ -210,20 +207,25 @@ class AuthRepositoryImpl
 
                 val cfClient = awsClientFactory.createBootstrapCloudFormationClient(creds)
                 return cfClient.use { cf ->
-                    val describeRequest = DescribeStacksRequest { this.stackName = stackName }
-                    val response = cf.describeStacks(describeRequest)
-                    val outputs = response.stacks?.firstOrNull()?.outputs
+                    val response = cf.describeStacks { this.stackName = stackName }
+                    val stack = response.stacks?.firstOrNull()
+                    val outputs = stack?.outputs
 
                     if (outputs == null) {
                         return LocusResult.Failure(DomainException.RecoveryError.InvalidStackOutputs)
                     }
+
+                    // Extract Account ID from ARN: arn:aws:cloudformation:region:account-id:stack/stack-name/stack-id
+                    // Index 4 is the account ID
+                    val stackId = stack.stackId
+                    val accountId = stackId?.split(":")?.getOrNull(4)
 
                     val accessKeyId = outputs.find { it.outputKey == "RuntimeAccessKeyId" }?.outputValue
                     val secretAccessKey = outputs.find { it.outputKey == "RuntimeSecretAccessKey" }?.outputValue
                     val bucket = outputs.find { it.outputKey == "BucketName" }?.outputValue ?: bucketName
                     val region = AwsClientFactory.AWS_REGION
 
-                    if (accessKeyId == null || secretAccessKey == null) {
+                    if (accessKeyId == null || secretAccessKey == null || accountId == null) {
                         return LocusResult.Failure(DomainException.RecoveryError.InvalidStackOutputs)
                     }
 
@@ -232,7 +234,7 @@ class AuthRepositoryImpl
                             accessKeyId = accessKeyId,
                             secretAccessKey = secretAccessKey,
                             bucketName = bucket,
-                            accountId = "",
+                            accountId = accountId,
                             region = region,
                             telemetrySalt = null,
                         ),
