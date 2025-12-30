@@ -68,9 +68,11 @@
 ### Step 8: Implement `ProvisioningUseCase`
 **Action:** Create the new device setup logic.
 *   **File:** `core/domain/src/main/kotlin/com/locus/core/domain/usecase/ProvisioningUseCase.kt`
+*   **Shared Constants:** Define private constants `POLL_INTERVAL = 5_000L` and `POLL_TIMEOUT = 600_000L` (10 mins) to ensure consistency.
 *   **Logic:**
     1.  Validate Device Name input.
-    2.  Load Template: `locus-stack.yaml` from application resources (e.g., `res/raw/locus_stack.yaml`).
+    2.  Load Template: `locus-stack.yaml` from application resources.
+        *   *Implementation Note:* Create a simple private helper `loadResource(resId: Int): String` (or similar injection) to avoid complex abstraction (YAGNI).
     3.  Call `CloudFormationClient.createStack` with parameters.
     4.  **Polling Strategy:**
         *   Interval: **5 seconds** fixed delay.
@@ -88,8 +90,9 @@
 ### Step 9: Implement `RecoverAccountUseCase`
 **Action:** Create the account linking logic.
 *   **File:** `core/domain/src/main/kotlin/com/locus/core/domain/usecase/RecoverAccountUseCase.kt`
+*   **Shared Constants:** Use the same `POLL_INTERVAL` and `POLL_TIMEOUT` values.
 *   **Logic:**
-    1.  Load Template: Reuse `locus-stack.yaml` from application resources.
+    1.  Load Template: Reuse `locus-stack.yaml` from application resources (using same helper approach).
     2.  Call `CloudFormationClient.createStack` with parameters (Existing Bucket).
     3.  **Polling Strategy:**
         *   Interval: **5 seconds** fixed delay.
