@@ -10,6 +10,8 @@ sealed class ProvisioningState {
 
     data object ValidatingInput : ProvisioningState()
 
+    data object ValidatingBucket : ProvisioningState()
+
     data object VerifyingBootstrapKeys : ProvisioningState()
 
     data class DeployingStack(val stackName: String) : ProvisioningState()

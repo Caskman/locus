@@ -64,6 +64,12 @@ interface AuthRepository {
     suspend fun getRuntimeCredentials(): LocusResult<RuntimeCredentials>
 
     /**
+     * Scans for available recovery buckets using the Bootstrap credentials.
+     * Returns a list of bucket names that start with "locus-".
+     */
+    suspend fun scanForRecoveryBuckets(): LocusResult<List<String>>
+
+    /**
      * Recovers an account by locating the IAM User credentials in an existing S3 bucket.
      */
     suspend fun recoverAccount(
