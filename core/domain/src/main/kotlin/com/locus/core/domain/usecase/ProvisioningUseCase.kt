@@ -9,6 +9,7 @@ import com.locus.core.domain.repository.AuthRepository
 import com.locus.core.domain.repository.ConfigurationRepository
 import com.locus.core.domain.result.DomainException
 import com.locus.core.domain.result.LocusResult
+import com.locus.core.domain.util.AuthUtils
 import kotlinx.coroutines.delay
 import java.security.SecureRandom
 import java.util.HexFormat
@@ -121,7 +122,7 @@ class ProvisioningUseCase
             authRepository.updateProvisioningState(ProvisioningState.FinalizingSetup)
 
             val newDeviceId = UUID.randomUUID().toString()
-            val newSalt = generateSalt()
+            val newSalt = AuthUtils.generateSalt()
 
             val initResult = configRepository.initializeIdentity(newDeviceId, newSalt)
             if (initResult is LocusResult.Failure) {
