@@ -11,6 +11,8 @@ import com.locus.core.domain.result.DomainException
 import com.locus.core.domain.result.LocusResult
 import com.locus.core.domain.util.AuthUtils
 import kotlinx.coroutines.delay
+import java.security.SecureRandom
+import java.util.HexFormat
 import java.util.UUID
 import javax.inject.Inject
 
@@ -151,6 +153,13 @@ class ProvisioningUseCase
             }
 
             return LocusResult.Success(Unit)
+        }
+
+        private fun generateSalt(): String {
+            val random = SecureRandom()
+            val bytes = ByteArray(32)
+            random.nextBytes(bytes)
+            return HexFormat.of().formatHex(bytes)
         }
 
         companion object {
