@@ -89,7 +89,7 @@
 **Action:** Create the account linking logic.
 *   **File:** `core/domain/src/main/kotlin/com/locus/core/domain/usecase/RecoverAccountUseCase.kt`
 *   **Logic:**
-    1.  Load Template: Reuse `locus-stack.yaml` from application resources. (Unless a specific `locus-stack-recovery.yaml` is introduced later).
+    1.  Load Template: Reuse `locus-stack.yaml` from application resources.
     2.  Call `CloudFormationClient.createStack` with parameters (Existing Bucket).
     3.  **Polling Strategy:**
         *   Interval: **5 seconds** fixed delay.
