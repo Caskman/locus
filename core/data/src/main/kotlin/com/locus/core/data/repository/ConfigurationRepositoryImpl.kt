@@ -21,14 +21,10 @@ class ConfigurationRepositoryImpl
             try {
                 // Store Device ID in plain prefs
                 prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
-                // Store Salt (usually stored alongside runtime credentials, but we can store it here for now if needed,
-                // however SecureStorageDataSource manages salt with credentials.
-                // The interface requires us to pass it. If we are setting up, we assume we might save it.
-                // But wait, SecureStorageDataSource saves salt with saveRuntimeCredentials.
-                // Here we might just want to persist it to the fallback plain prefs if needed, or rely on runtime creds flow.
-                // The plan says "Implement a basic version... Can use SharedPreferences or DataStore to persist deviceId and salt."
 
-                // Let's store salt in plain prefs as a backup/fallback as SecureStorage does.
+                // Persist the telemetry salt. While runtime credentials also manage the salt,
+                // we store it here as a fallback/redundancy for scenarios where we might
+                // need it independent of the full credential set or for early initialization.
                 prefs.edit().putString(SecureStorageDataSource.KEY_SALT, salt).apply()
 
                 return LocusResult.Success(Unit)
