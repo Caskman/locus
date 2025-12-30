@@ -22,6 +22,7 @@
 *   **File:** `core/domain/src/main/kotlin/com/locus/core/domain/infrastructure/CloudFormationClient.kt`
     *   `suspend fun createStack(template: String, parameters: Map<String, String>): LocusResult<String>` (Returns Stack ID)
     *   `suspend fun describeStack(stackName: String): LocusResult<StackStatus>`
+    *   *Note on `template`:* This string will be loaded from application resources (e.g., `res/raw/locus_stack.yaml`).
 *   **File:** `core/domain/src/main/kotlin/com/locus/core/domain/infrastructure/S3Client.kt`
     *   `suspend fun listBuckets(): LocusResult<List<String>>`
     *   `suspend fun getBucketTags(bucketName: String): LocusResult<Map<String, String>>`
@@ -69,12 +70,17 @@
 *   **File:** `core/domain/src/main/kotlin/com/locus/core/domain/usecase/ProvisioningUseCase.kt`
 *   **Logic:**
     1.  Validate Device Name input.
-    2.  Call `CloudFormationClient.createStack` with "New Device" template parameters.
-    3.  Loop/Poll `CloudFormationClient.describeStack`.
-    4.  Call `AuthRepository.updateProvisioningState` with progress.
-    5.  On Success:
+    2.  Load Template: `locus-stack.yaml` (New Device Template) from resources.
+    3.  Call `CloudFormationClient.createStack` with parameters.
+    4.  **Polling Strategy:**
+        *   Interval: **5 seconds** fixed delay.
+        *   Timeout: **10 minutes** hard stop.
+        *   Loop `CloudFormationClient.describeStack`.
+    5.  Call `AuthRepository.updateProvisioningState` with progress.
+    6.  On Success:
         *   Parse Stack Outputs (Access Key, Secret, Bucket).
-        *   Generate new UUID for `device_id` and Salt.
+        *   Generate new UUID for `device_id`.
+        *   Generate Salt: **SecureRandom 32-byte Hex String**.
         *   Call `ConfigurationRepository.initializeIdentity`.
         *   Call `AuthRepository.promoteToRuntimeCredentials`.
 *   **Verification:** Unit Test `ProvisioningUseCaseTest` (Mocking clients).
@@ -83,12 +89,17 @@
 **Action:** Create the account linking logic.
 *   **File:** `core/domain/src/main/kotlin/com/locus/core/domain/usecase/RecoverAccountUseCase.kt`
 *   **Logic:**
-    1.  Call `CloudFormationClient.createStack` with "Recovery" template parameters (Existing Bucket).
-    2.  Loop/Poll `CloudFormationClient.describeStack`.
-    3.  Call `AuthRepository.updateProvisioningState` with progress.
-    4.  On Success:
+    1.  Load Template: `locus-stack.yaml` (or recovery variant) from resources.
+    2.  Call `CloudFormationClient.createStack` with parameters (Existing Bucket).
+    3.  **Polling Strategy:**
+        *   Interval: **5 seconds** fixed delay.
+        *   Timeout: **10 minutes** hard stop.
+        *   Loop `CloudFormationClient.describeStack`.
+    4.  Call `AuthRepository.updateProvisioningState` with progress.
+    5.  On Success:
         *   Parse Stack Outputs.
-        *   Generate new UUID for `device_id` and Salt.
+        *   Generate new UUID for `device_id`.
+        *   Generate Salt: **SecureRandom 32-byte Hex String**.
         *   Call `ConfigurationRepository.initializeIdentity`.
         *   Call `AuthRepository.promoteToRuntimeCredentials`.
 *   **Verification:** Unit Test `RecoverAccountUseCaseTest`.
