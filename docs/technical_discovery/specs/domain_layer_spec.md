@@ -165,20 +165,6 @@ interface AuthRepository {
     suspend fun clearBootstrapCredentials(): LocusResult<Unit>
     suspend fun getRuntimeCredentials(): LocusResult<RuntimeCredentials>
 
-    // Recovery Action
-    // Note: Recovery now involves deploying a stack, similar to initial provisioning.
-    // This allows the use case to manage the 'Satellite Stack' deployment logic.
-    // Error handling contract:
-    // - Must not throw; all failures are represented via LocusResult.
-    // - Implementations MUST validate that `bucketName` exists and is accessible with the
-    //   current bootstrap credentials.
-    // - Callers can distinguish at least the following failure categories via LocusResult:
-    //   * BucketNotFound (bucket does not exist or is not visible)
-    //   * AccessDenied (bootstrap credentials lack permissions for the bucket)
-    //   * Other infrastructure / network failures
-    // Implementations should encode these as distinct LocusResult failure variants so that
-    // use cases can react appropriately (e.g., prompt for a different bucket vs. credentials).
-    suspend fun recoverAccount(bucketName: String, deviceName: String): LocusResult<RuntimeCredentials>
 }
 
 sealed class BucketValidationStatus {
@@ -201,15 +187,34 @@ Manages app settings and unique identifiers.
 
 ```kotlin
 interface ConfigurationRepository {
-    val deviceId: String // Immutable after creation
-    val telemetrySalt: String // Immutable
-
     suspend fun initializeIdentity(deviceId: String, salt: String): LocusResult<Unit>
-    fun isIdentitySet(): Boolean
+    suspend fun getDeviceId(): String?
+    suspend fun getTelemetrySalt(): String?
 }
 ```
 
-### 3.5. DeviceStateRepository
+### 3.5. Infrastructure Clients
+Pure Kotlin interfaces for Infrastructure access.
+
+```kotlin
+interface CloudFormationClient {
+    suspend fun createStack(creds: BootstrapCredentials, stackName: String, template: String, parameters: Map<String, String>): LocusResult<String>
+    suspend fun describeStack(creds: BootstrapCredentials, stackName: String): LocusResult<StackDetails>
+}
+
+data class StackDetails(val stackId: String?, val status: String, val outputs: Map<String, String>?)
+
+interface S3Client {
+    suspend fun listBuckets(creds: BootstrapCredentials): LocusResult<List<String>>
+    suspend fun getBucketTags(creds: BootstrapCredentials, bucketName: String): LocusResult<Map<String, String>>
+}
+
+interface ResourceProvider {
+    fun getStackTemplate(): String
+}
+```
+
+### 3.6. DeviceStateRepository
 Provides access to hardware status.
 
 ```kotlin
@@ -225,7 +230,7 @@ interface DeviceStateRepository {
 }
 ```
 
-### 3.6. TrackingStrategyRepository
+### 3.7. TrackingStrategyRepository
 Determines the active tracking method based on hardware capabilities.
 
 ```kotlin
@@ -239,7 +244,7 @@ enum class TrackingStrategy {
 }
 ```
 
-### 3.7. ServiceHealthRepository
+### 3.8. ServiceHealthRepository
 Manages the Watchdog state.
 
 ```kotlin

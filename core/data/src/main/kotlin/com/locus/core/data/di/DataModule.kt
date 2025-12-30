@@ -8,13 +8,21 @@ import androidx.datastore.dataStoreFile
 import com.google.crypto.tink.Aead
 import com.google.crypto.tink.KeyTemplates
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
+import com.locus.core.data.infrastructure.CloudFormationClientImpl
+import com.locus.core.data.infrastructure.ResourceProviderImpl
+import com.locus.core.data.infrastructure.S3ClientImpl
 import com.locus.core.data.model.BootstrapCredentialsDto
 import com.locus.core.data.model.RuntimeCredentialsDto
 import com.locus.core.data.repository.AppVersionRepositoryImpl
 import com.locus.core.data.repository.AuthRepositoryImpl
+import com.locus.core.data.repository.ConfigurationRepositoryImpl
 import com.locus.core.data.source.local.EncryptedDataStoreSerializer
+import com.locus.core.domain.infrastructure.CloudFormationClient
+import com.locus.core.domain.infrastructure.ResourceProvider
+import com.locus.core.domain.infrastructure.S3Client
 import com.locus.core.domain.repository.AppVersionRepository
 import com.locus.core.domain.repository.AuthRepository
+import com.locus.core.domain.repository.ConfigurationRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -34,6 +42,19 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindAuthRepository(authRepositoryImpl: AuthRepositoryImpl): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindConfigurationRepository(configurationRepositoryImpl: ConfigurationRepositoryImpl): ConfigurationRepository
+
+    @Binds
+    abstract fun bindCloudFormationClient(cloudFormationClientImpl: CloudFormationClientImpl): CloudFormationClient
+
+    @Binds
+    abstract fun bindS3Client(s3ClientImpl: S3ClientImpl): S3Client
+
+    @Binds
+    abstract fun bindResourceProvider(resourceProviderImpl: ResourceProviderImpl): ResourceProvider
 
     companion object {
         private const val MASTER_KEY_URI = "android-keystore://master_key"
