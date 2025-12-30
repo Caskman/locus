@@ -18,6 +18,12 @@ fi
 # Using || exit 1 to ensure script fails if any gradle task fails
 ./gradlew lintDebug test "$KTLINT_TASK" || { echo "Gradle checks failed"; exit 1; }
 
+echo "Running Detekt..."
+./gradlew detekt || { echo "Detekt checks failed"; exit 1; }
+
+echo "Running ShellCheck..."
+./scripts/verify_shellcheck.sh || { echo "ShellCheck failed"; exit 1; }
+
 echo "Running Kover Verification..."
 # This ensures that branch coverage thresholds are met
 ./gradlew koverVerify || { echo "Coverage verification failed"; exit 1; }
