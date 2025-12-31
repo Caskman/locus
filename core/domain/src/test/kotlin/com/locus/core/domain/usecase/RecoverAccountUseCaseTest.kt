@@ -12,6 +12,7 @@ import com.locus.core.domain.repository.AuthRepository
 import com.locus.core.domain.repository.ConfigurationRepository
 import com.locus.core.domain.result.DomainException
 import com.locus.core.domain.result.LocusResult
+import com.locus.core.domain.util.TimeProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,6 +27,7 @@ class RecoverAccountUseCaseTest {
     private val cloudFormationClient = mockk<CloudFormationClient>()
     private val s3Client = mockk<S3Client>()
     private val resourceProvider = mockk<ResourceProvider>()
+    private val timeProvider = mockk<TimeProvider>(relaxed = true)
 
     private val useCase =
         RecoverAccountUseCase(
@@ -34,6 +36,7 @@ class RecoverAccountUseCaseTest {
             cloudFormationClient,
             s3Client,
             resourceProvider,
+            timeProvider,
         )
 
     private val creds = BootstrapCredentials("access", "secret", "token", "us-east-1")
@@ -121,6 +124,46 @@ class RecoverAccountUseCaseTest {
             val error = (result as LocusResult.Failure).error
             assertThat(error).isEqualTo(originalError)
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.DeployingStack }) }
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
+        }
+
+    @Test
+    fun `returns failure when stack creation fails with DomainException`() =
+        runBlocking {
+            coEvery { s3Client.getBucketTags(creds, bucketName) } returns
+                LocusResult.Success(mapOf("aws:cloudformation:stack-name" to "locus-user-old"))
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+
+            val originalError = DomainException.NetworkError.Generic(Exception("Network"))
+            coEvery { cloudFormationClient.createStack(any(), any(), any(), any()) } returns LocusResult.Failure(originalError)
+
+            val result = useCase(creds, bucketName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            val error = (result as LocusResult.Failure).error
+            assertThat(error).isEqualTo(originalError)
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.DeployingStack }) }
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
+        }
+
+    @Test
+    fun `returns failure when stack creation times out`() =
+        runBlocking {
+            coEvery { s3Client.getBucketTags(creds, bucketName) } returns
+                LocusResult.Success(mapOf("aws:cloudformation:stack-name" to "locus-user-old"))
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+            coEvery { cloudFormationClient.createStack(any(), any(), any(), any()) } returns LocusResult.Success("stack-id")
+
+            // Simulate timeout
+            every { timeProvider.currentTimeMillis() } returnsMany listOf(0L, 700_000L)
+
+            val result = useCase(creds, bucketName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            val error = (result as LocusResult.Failure).error
+            assertThat(error).isInstanceOf(DomainException.NetworkError.Timeout::class.java)
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
         }
 
