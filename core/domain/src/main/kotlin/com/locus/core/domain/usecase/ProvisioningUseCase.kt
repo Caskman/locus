@@ -29,7 +29,7 @@ class ProvisioningUseCase
             deviceName: String,
         ): LocusResult<Unit> {
             // 1. Validate Input
-            if (deviceName.isBlank()) {
+            if (deviceName.isBlank() || !deviceName.matches(Regex("^[a-zA-Z0-9-]*$"))) {
                 return LocusResult.Failure(DomainException.AuthError.InvalidCredentials)
             }
 

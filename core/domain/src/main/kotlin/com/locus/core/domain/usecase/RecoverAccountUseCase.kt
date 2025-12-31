@@ -56,13 +56,13 @@ class RecoverAccountUseCase
                 }
 
             val newDeviceId = UUID.randomUUID().toString()
-            val stackNameForRecovery = "locus-user-$newDeviceId"
+            val stackName = "locus-user-$newDeviceId"
 
             // 3. Create Stack and Poll
             val stackResult =
                 stackProvisioningService.createAndPollStack(
                     creds = creds,
-                    stackName = stackNameForRecovery,
+                    stackName = stackName,
                     template = template,
                     parameters =
                         mapOf(
