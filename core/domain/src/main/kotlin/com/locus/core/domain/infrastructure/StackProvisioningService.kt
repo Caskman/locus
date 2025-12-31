@@ -82,10 +82,14 @@ class StackProvisioningService
                     )
 
                     if (details.status == STATUS_CREATE_COMPLETE) {
+                        val stackId = details.stackId
+                        if (stackId.isNullOrEmpty()) {
+                            return fail(DomainException.ProvisioningError.DeploymentFailed("Missing stack ID"))
+                        }
                         if (details.outputs == null) {
                             return fail(DomainException.ProvisioningError.DeploymentFailed("Missing stack outputs"))
                         }
-                        return LocusResult.Success(StackProvisioningResult(details.stackId ?: "", details.outputs))
+                        return LocusResult.Success(StackProvisioningResult(stackId, details.outputs))
                     }
 
                     if (PERMANENT_ERROR_STATUSES.contains(details.status)) {
