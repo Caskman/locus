@@ -14,6 +14,7 @@ import com.locus.core.domain.result.DomainException
 import com.locus.core.domain.result.LocusResult
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -120,6 +121,34 @@ class RecoverAccountUseCaseTest {
             assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
             val error = (result as LocusResult.Failure).error
             assertThat(error).isEqualTo(originalError)
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.DeployingStack }) }
+            coVerify {
+                authRepository.updateProvisioningState(
+                    match {
+                        it is ProvisioningState.Failure &&
+                            it.error is DomainException.ProvisioningError.DeploymentFailed &&
+                            it.error.message?.contains("Unknown") == true
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun `returns failure when stack creation fails with DomainException`() =
+        runBlocking {
+            coEvery { s3Client.getBucketTags(creds, bucketName) } returns
+                LocusResult.Success(mapOf("aws:cloudformation:stack-name" to "locus-user-old"))
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+
+            val domainError = DomainException.ProvisioningError.Quota("Quota Exceeded")
+            coEvery { cloudFormationClient.createStack(any(), any(), any(), any()) } returns LocusResult.Failure(domainError)
+
+            val result = useCase(creds, bucketName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            val error = (result as LocusResult.Failure).error
+            assertThat(error).isEqualTo(domainError)
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.DeployingStack }) }
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
         }
@@ -276,6 +305,36 @@ class RecoverAccountUseCaseTest {
         }
 
     @Test
+    fun `returns failure when identity initialization fails with DomainException`() =
+        runBlocking {
+            coEvery { s3Client.getBucketTags(creds, bucketName) } returns
+                LocusResult.Success(mapOf("aws:cloudformation:stack-name" to "locus-user-old"))
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+            coEvery { cloudFormationClient.createStack(any(), any(), any(), any()) } returns LocusResult.Success("stack-id")
+
+            coEvery { cloudFormationClient.describeStack(any(), any()) } returns
+                LocusResult.Success(
+                    StackDetails(
+                        stackId,
+                        "CREATE_COMPLETE",
+                        mapOf(
+                            "RuntimeAccessKeyId" to "rk",
+                            "RuntimeSecretAccessKey" to "rs",
+                        ),
+                    ),
+                )
+
+            val domainError = DomainException.NetworkError.Offline
+            coEvery { configRepository.initializeIdentity(any(), any()) } returns LocusResult.Failure(domainError)
+
+            val result = useCase(creds, bucketName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            assertThat((result as LocusResult.Failure).error).isEqualTo(domainError)
+        }
+
+    @Test
     fun `returns failure when credential promotion fails`() =
         runBlocking {
             coEvery { s3Client.getBucketTags(creds, bucketName) } returns
@@ -307,6 +366,38 @@ class RecoverAccountUseCaseTest {
             assertThat((result as LocusResult.Failure).error).isEqualTo(expectedError)
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.FinalizingSetup }) }
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
+        }
+
+    @Test
+    fun `returns failure when credential promotion fails with DomainException`() =
+        runBlocking {
+            coEvery { s3Client.getBucketTags(creds, bucketName) } returns
+                LocusResult.Success(mapOf("aws:cloudformation:stack-name" to "locus-user-old"))
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+            coEvery { cloudFormationClient.createStack(any(), any(), any(), any()) } returns LocusResult.Success("stack-id")
+
+            coEvery { cloudFormationClient.describeStack(any(), any()) } returns
+                LocusResult.Success(
+                    StackDetails(
+                        stackId,
+                        "CREATE_COMPLETE",
+                        mapOf(
+                            "RuntimeAccessKeyId" to "rk",
+                            "RuntimeSecretAccessKey" to "rs",
+                        ),
+                    ),
+                )
+
+            coEvery { configRepository.initializeIdentity(any(), any()) } returns LocusResult.Success(Unit)
+
+            val domainError = DomainException.NetworkError.Offline
+            coEvery { authRepository.promoteToRuntimeCredentials(any()) } returns LocusResult.Failure(domainError)
+
+            val result = useCase(creds, bucketName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            assertThat((result as LocusResult.Failure).error).isEqualTo(domainError)
         }
 
     @Test
@@ -396,6 +487,12 @@ class RecoverAccountUseCaseTest {
             assertThat(slot.captured.accessKeyId).isEqualTo("rk")
             assertThat(slot.captured.bucketName).isEqualTo(bucketName)
             assertThat(slot.captured.accountId).isEqualTo("123456789012")
-            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.FinalizingSetup }) }
+
+            coVerifyOrder {
+                authRepository.updateProvisioningState(match { it is ProvisioningState.ValidatingBucket })
+                authRepository.updateProvisioningState(match { it is ProvisioningState.DeployingStack })
+                authRepository.updateProvisioningState(match { it is ProvisioningState.WaitingForCompletion })
+                authRepository.updateProvisioningState(match { it is ProvisioningState.FinalizingSetup })
+            }
         }
 }
