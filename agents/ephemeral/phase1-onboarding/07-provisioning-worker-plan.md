@@ -5,7 +5,7 @@
 
 ## Prerequisites: Human Action Steps
 
-*   None.
+*   **Update Notification Spec:** Update `docs/technical_discovery/specs/ui/notifications.md` to broaden the scope of `channel_tracking` to include "Long-Running Setup/Maintenance Operations" to legitimize its usage for provisioning.
 
 ## Implementation Steps
 
@@ -25,10 +25,13 @@
 ### Step 2: Update AuthRepository Contract
 **Goal:** Enable secure retrieval of Bootstrap Credentials within the background worker.
 
+*   **Modify Specification:** `docs/technical_discovery/specs/domain_layer_spec.md`
+    *   Update `AuthRepository` interface definition to include `suspend fun getBootstrapCredentials(): LocusResult<BootstrapCredentials>`.
 *   **Modify Interface:** `core/domain/src/main/kotlin/com/locus/core/domain/repository/AuthRepository.kt`
     *   Add `suspend fun getBootstrapCredentials(): LocusResult<BootstrapCredentials>`
 *   **Update Implementation:** `core/data/src/main/kotlin/com/locus/core/data/repository/AuthRepositoryImpl.kt`
-    *   Implement using `secureStorage.getBootstrapCredentials()`
+    *   Implement using `secureStorage.getBootstrapCredentials()`.
+    *   **Security Check:** Verify state is `SetupPending` before returning credentials.
 *   **Create Test Double:** `core/testing/src/main/kotlin/com/locus/core/testing/repository/FakeAuthRepository.kt`
     *   **Create File:** If it does not exist.
     *   Implement the full `AuthRepository` interface (stubs for methods not used in this task, functional mock for `getBootstrapCredentials`).
@@ -48,19 +51,25 @@
         *   Channel: `channel_tracking`
         *   Title: `Locus • Setup`
         *   Body: `Provisioning resources...`
-        *   Icon: `@drawable/ic_stat_tracking` (fallback: `@mipmap/ic_launcher` if unavailable).
-    2.  **Credentials:** Call `authRepository.getBootstrapCredentials()`. Fail if missing.
+        *   Icon: `@drawable/ic_stat_sync` (fallback: `android.R.drawable.stat_sys_upload` if unavailable).
+    2.  **Credentials:** Call `authRepository.getBootstrapCredentials()`. Fail if missing or error.
     3.  **Dispatch:**
+        *   Execute `runCatching` block.
         *   If `PROVISION`: Call `provisioningUseCase(creds, input.deviceName)`
         *   If `RECOVER`: Call `recoverAccountUseCase(creds, input.bucketName)`
-    4.  **Result:** Return `Result.success()` or `Result.failure()`.
+    4.  **Result Handling:**
+        *   **Success:** Return `Result.success()`.
+        *   **Transient Error (Network):** Return `Result.retry()` (WorkManager handles exponential backoff by default or can be configured).
+        *   **Terminal Failure:**
+            *   Call `authRepository.updateProvisioningState(ProvisioningState.Error(msg))` to ensure UI updates.
+            *   Return `Result.failure()`.
 
 ## Alignment Mapping
 
-*   **R1.600 (Provisioning Background Task):** Implemented by `ProvisioningWorker` running as a Foreground Service.
+*   **R1.600 (Provisioning Background Task):** Implemented by `ProvisioningWorker` running as a Foreground Service. Ensure this ID is commented in code.
 *   **R1.1350 (Recovery Background Task):** Implemented by `ProvisioningWorker` handling the `RECOVER` mode.
 *   **R1.700 (Use Bootstrap Keys):** `AuthRepository.getBootstrapCredentials()` allows the worker to access keys.
-*   **UI/Notifications Spec:** Adheres to the "Locus • [State]" title format and reuses `channel_tracking`.
+*   **UI/Notifications Spec:** Adheres to the "Locus • [State]" title format and reuses `channel_tracking` (with updated spec scope).
 
 ## Testing Strategy
 
@@ -70,8 +79,9 @@
 *   **Cases:**
     *   **Provisioning Success:** Verify `ProvisioningUseCase` is called and `Result.success()` returned.
     *   **Recovery Success:** Verify `RecoverAccountUseCase` is called and `Result.success()` returned.
+    *   **Transient Error:** Mock `IOException` from UseCase, verify `Result.retry()` is returned.
+    *   **Terminal Error:** Mock `AuthException` from UseCase, verify `repo.updateProvisioningState(Error)` is called AND `Result.failure()` is returned.
     *   **Missing Credentials:** Verify failure if Repo returns error.
-    *   **UseCase Failure:** Verify `Result.failure()` if UseCase returns error.
     *   **Notification:** Verify `setForeground` is called.
 
 ## Completion Criteria
