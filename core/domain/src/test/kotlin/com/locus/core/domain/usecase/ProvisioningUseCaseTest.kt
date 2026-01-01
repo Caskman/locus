@@ -104,12 +104,60 @@ class ProvisioningUseCaseTest {
         runBlocking {
             every { resourceProvider.getStackTemplate() } returns template
 
-            // This case should be handled by StackProvisioningService, but if it returns outputs as empty?
-            // The service returns StackProvisioningResult which has map.
-            // If the map is missing required keys, UseCase handles it.
-
             coEvery { stackProvisioningService.createAndPollStack(any(), any(), any(), any()) } returns
                 LocusResult.Success(StackProvisioningResult(stackId, emptyMap()))
+
+            val result = useCase(creds, deviceName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            val error = (result as LocusResult.Failure).error
+            assertThat(error).isInstanceOf(DomainException.ProvisioningError.DeploymentFailed::class.java)
+            assertThat(error.message).contains("Invalid stack outputs")
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
+        }
+
+    @Test
+    fun `returns failure when stack outputs are partial (Missing Secret Key)`() =
+        runBlocking {
+            every { resourceProvider.getStackTemplate() } returns template
+
+            coEvery { stackProvisioningService.createAndPollStack(any(), any(), any(), any()) } returns
+                LocusResult.Success(
+                    StackProvisioningResult(
+                        stackId,
+                        mapOf(
+                            "RuntimeAccessKeyId" to "rk",
+                            // Missing Secret Key
+                            "BucketName" to "bucket",
+                        ),
+                    ),
+                )
+
+            val result = useCase(creds, deviceName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            val error = (result as LocusResult.Failure).error
+            assertThat(error).isInstanceOf(DomainException.ProvisioningError.DeploymentFailed::class.java)
+            assertThat(error.message).contains("Invalid stack outputs")
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
+        }
+
+    @Test
+    fun `returns failure when stack outputs are partial (Missing Bucket)`() =
+        runBlocking {
+            every { resourceProvider.getStackTemplate() } returns template
+
+            coEvery { stackProvisioningService.createAndPollStack(any(), any(), any(), any()) } returns
+                LocusResult.Success(
+                    StackProvisioningResult(
+                        stackId,
+                        mapOf(
+                            "RuntimeAccessKeyId" to "rk",
+                            "RuntimeSecretAccessKey" to "rs",
+                            // Missing Bucket
+                        ),
+                    ),
+                )
 
             val result = useCase(creds, deviceName)
 
@@ -147,6 +195,117 @@ class ProvisioningUseCaseTest {
             assertThat((result as LocusResult.Failure).error).isEqualTo(expectedError)
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.FinalizingSetup }) }
             coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
+        }
+
+    @Test
+    fun `returns failure when identity initialization fails with non-DomainException`() =
+        runBlocking {
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+
+            coEvery { stackProvisioningService.createAndPollStack(any(), any(), any(), any()) } returns
+                LocusResult.Success(
+                    StackProvisioningResult(
+                        stackId,
+                        mapOf(
+                            "RuntimeAccessKeyId" to "rk",
+                            "RuntimeSecretAccessKey" to "rs",
+                            "BucketName" to "bucket",
+                        ),
+                    ),
+                )
+
+            val exception = RuntimeException("Unexpected error")
+            coEvery { configRepository.initializeIdentity(any(), any()) } returns LocusResult.Failure(exception)
+
+            val result = useCase(creds, deviceName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            val error = (result as LocusResult.Failure).error
+            // The use case returns the original error
+            assertThat(error).isEqualTo(exception)
+
+            // But verify the state update used the wrapped error
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.FinalizingSetup }) }
+            coVerify {
+                authRepository.updateProvisioningState(
+                    match {
+                        it is ProvisioningState.Failure &&
+                            it.error is DomainException.AuthError.Generic &&
+                            it.error.cause == exception
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun `returns failure when promotion fails with DomainException`() =
+        runBlocking {
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+
+            coEvery { stackProvisioningService.createAndPollStack(any(), any(), any(), any()) } returns
+                LocusResult.Success(
+                    StackProvisioningResult(
+                        stackId,
+                        mapOf(
+                            "RuntimeAccessKeyId" to "rk",
+                            "RuntimeSecretAccessKey" to "rs",
+                            "BucketName" to "bucket",
+                        ),
+                    ),
+                )
+
+            coEvery { configRepository.initializeIdentity(any(), any()) } returns LocusResult.Success(Unit)
+            val domainError = DomainException.AuthError.AccessDenied
+            coEvery { authRepository.promoteToRuntimeCredentials(any()) } returns LocusResult.Failure(domainError)
+
+            val result = useCase(creds, deviceName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            assertThat((result as LocusResult.Failure).error).isEqualTo(domainError)
+            coVerify { authRepository.updateProvisioningState(match { it is ProvisioningState.Failure }) }
+        }
+
+    @Test
+    fun `returns failure when promotion fails with non-DomainException`() =
+        runBlocking {
+            every { resourceProvider.getStackTemplate() } returns template
+            coEvery { authRepository.updateProvisioningState(any()) } returns Unit
+
+            coEvery { stackProvisioningService.createAndPollStack(any(), any(), any(), any()) } returns
+                LocusResult.Success(
+                    StackProvisioningResult(
+                        stackId,
+                        mapOf(
+                            "RuntimeAccessKeyId" to "rk",
+                            "RuntimeSecretAccessKey" to "rs",
+                            "BucketName" to "bucket",
+                        ),
+                    ),
+                )
+
+            coEvery { configRepository.initializeIdentity(any(), any()) } returns LocusResult.Success(Unit)
+            val exception = RuntimeException("Promotion failed")
+            coEvery { authRepository.promoteToRuntimeCredentials(any()) } returns LocusResult.Failure(exception)
+
+            val result = useCase(creds, deviceName)
+
+            assertThat(result).isInstanceOf(LocusResult.Failure::class.java)
+            val error = (result as LocusResult.Failure).error
+            // The use case returns the original error
+            assertThat(error).isEqualTo(exception)
+
+            // But verify the state update used the wrapped error
+            coVerify {
+                authRepository.updateProvisioningState(
+                    match {
+                        it is ProvisioningState.Failure &&
+                            it.error is DomainException.AuthError.Generic &&
+                            it.error.cause == exception
+                    },
+                )
+            }
         }
 
     @Test
