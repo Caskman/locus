@@ -91,5 +91,5 @@
 *   `app/build.gradle.kts` includes `work-testing`.
 *   `domain_layer_spec.md` is updated.
 *   `ProvisioningWorker` correctly handles Retries and State Updates.
-*   Tests cover Retry and Failure scenarios (> 80% coverage).
+*   Unit tests achieve at least 80% line coverage of the `ProvisioningWorker` class, explicitly covering retry and failure scenarios.
 *   `./scripts/run_local_validation.sh` passes.
