@@ -9,6 +9,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.locus.android.R
+import com.locus.android.util.NotificationConstants
 import com.locus.core.domain.model.auth.ProvisioningState
 import com.locus.core.domain.repository.AuthRepository
 import com.locus.core.domain.result.DomainException
@@ -40,7 +41,7 @@ class ProvisioningWorker
         }
 
         override suspend fun getForegroundInfo(): ForegroundInfo {
-            val notification = createNotification("Starting setup...")
+            val notification = createNotification(applicationContext.getString(R.string.notification_setup_starting))
             // For Android 14+ we need to specify the type
             return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 ForegroundInfo(
@@ -107,12 +108,15 @@ class ProvisioningWorker
                     }
                     // Fatal Errors - Fail
                     else -> {
-                        handleFatalError(error.message ?: "Setup failed")
+                        handleFatalError(
+                            error.message
+                                ?: applicationContext.getString(R.string.notification_setup_fallback_message),
+                        )
                         Result.failure()
                     }
                 }
             } else {
-                handleFatalError("Unknown error occurred")
+                handleFatalError(applicationContext.getString(R.string.notification_setup_unknown_error))
                 Result.failure()
             }
         }
@@ -126,8 +130,8 @@ class ProvisioningWorker
         }
 
         private fun createNotification(message: String): Notification {
-            return NotificationCompat.Builder(applicationContext, "setup_status")
-                .setContentTitle("Locus • Setup")
+            return NotificationCompat.Builder(applicationContext, NotificationConstants.CHANNEL_ID_SETUP)
+                .setContentTitle(applicationContext.getString(R.string.notification_setup_title))
                 .setContentText(message)
                 .setSmallIcon(R.mipmap.ic_launcher) // Fallback icon
                 .setOngoing(true)
