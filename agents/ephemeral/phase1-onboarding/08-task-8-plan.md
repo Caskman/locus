@@ -3,6 +3,17 @@
 ## Prerequisites: Human Action Steps
 None.
 
+## Phase 0: Technical Review Fixes (PR #300)
+**Goal:** Address technical debt and review comments from PR #300 in `AuthRepositoryImpl` to ensure a clean foundation before UI implementation.
+
+1.  **Refactor `AuthRepositoryImpl.kt`**
+    *   **File:** `core/data/src/main/kotlin/com/locus/core/data/repository/AuthRepositoryImpl.kt`
+    *   **Issue 1 (Logging):** Replace `e.printStackTrace()` with `android.util.Log.e(...)`.
+        *   *Justification:* `printStackTrace` does not log correctly to Android Logcat in production.
+    *   **Issue 2 (Imports):** Standardize `DomainException` usage.
+        *   *Justification:* Inconsistent use of fully qualified names vs short names reduces readability. Use short names (already imported).
+    *   **Validation:** Run `./gradlew :core:data:testDebugUnitTest`.
+
 ## Phase 1: Logic Implementation
 **Goal:** Implement the state management and business logic for the complete Onboarding "Input" flow (Welcome -> Credentials -> Choice -> Setup/Recovery).
 
