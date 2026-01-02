@@ -5,6 +5,7 @@ import androidx.work.WorkManager
 import aws.sdk.kotlin.services.s3.listBuckets
 import com.locus.core.data.source.local.SecureStorageDataSource
 import com.locus.core.data.source.remote.aws.AwsClientFactory
+import com.locus.core.data.util.await
 import com.locus.core.domain.model.auth.AuthState
 import com.locus.core.domain.model.auth.BootstrapCredentials
 import com.locus.core.domain.model.auth.ProvisioningState
@@ -38,7 +39,7 @@ class AuthRepositoryImpl
 
         private suspend fun checkProvisioningWorkerStatus() {
             try {
-                val workInfos = workManager.getWorkInfosForUniqueWork(AuthRepository.PROVISIONING_WORK_NAME).get()
+                val workInfos = workManager.getWorkInfosForUniqueWork(AuthRepository.PROVISIONING_WORK_NAME).await()
                 if (workInfos.isNotEmpty()) {
                     val info = workInfos.first()
                     when (info.state) {
@@ -63,7 +64,8 @@ class AuthRepositoryImpl
                     }
                 }
             } catch (e: Exception) {
-                // Ignore work manager errors during init
+                // Should log this properly in production, using printStackTrace for debug visibility
+                e.printStackTrace()
             }
         }
 

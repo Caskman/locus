@@ -7,6 +7,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.google.crypto.tink.config.TinkConfig
+import com.locus.android.util.NotificationConstants
 import com.locus.core.domain.repository.AuthRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -57,8 +58,8 @@ class LocusApp : Application(), Configuration.Provider {
         // Setup Channel
         val setupChannel =
             NotificationChannel(
-                "setup_status",
-                "Setup Status",
+                NotificationConstants.CHANNEL_ID_SETUP,
+                getString(R.string.notification_channel_setup_name),
                 NotificationManager.IMPORTANCE_LOW,
             )
         notificationManager.createNotificationChannel(setupChannel)
@@ -66,8 +67,8 @@ class LocusApp : Application(), Configuration.Provider {
         // Tracking Channel
         val trackingChannel =
             NotificationChannel(
-                "tracking_status",
-                "Tracking Status",
+                NotificationConstants.CHANNEL_ID_TRACKING,
+                getString(R.string.notification_channel_tracking_name),
                 NotificationManager.IMPORTANCE_LOW,
             )
         notificationManager.createNotificationChannel(trackingChannel)
