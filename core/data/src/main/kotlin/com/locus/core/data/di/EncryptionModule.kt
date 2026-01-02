@@ -35,10 +35,13 @@ object EncryptionModule {
             // If running in unit tests (Robolectric or local), return a dummy AEAD
             // This checks if we are likely in a test env where KeyStore is failing
             if (isRobolectric()) {
-                // Note: We do not check BuildConfig.DEBUG here because we want to allow
-                // running unit tests against Release builds (e.g. testReleaseUnitTest).
+                // Note: We intentionally avoid relying on build-type flags here so that we can
+                // run unit tests against Release builds (e.g. testReleaseUnitTest).
                 // The isRobolectric() check is sufficient safety because org.robolectric.Robolectric
                 // class will not be present in the production APK runtime.
+                //
+                // IMPORTANT: This creates an INSECURE AEAD implementation that performs no real
+                // encryption or authentication and must NEVER be used in production code.
                 return object : Aead {
                     override fun encrypt(
                         plaintext: ByteArray,

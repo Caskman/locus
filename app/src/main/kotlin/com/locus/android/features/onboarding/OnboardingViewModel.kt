@@ -37,6 +37,10 @@ class OnboardingViewModel
     constructor(
         private val authRepository: AuthRepository,
     ) : ViewModel() {
+        private companion object {
+            const val BOOTSTRAP_REGION = "us-east-1"
+        }
+
         private val _uiState = MutableStateFlow(OnboardingUiState())
         val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
@@ -100,7 +104,7 @@ class OnboardingViewModel
             } catch (
                 @Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception,
             ) {
-                _uiState.update { it.copy(error = "Failed to parse JSON") }
+                _uiState.update { it.copy(error = "Failed to parse JSON: ${e.message}") }
             }
         }
 
@@ -116,14 +120,13 @@ class OnboardingViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, error = null) }
-                // Note: Region hardcoded to us-east-1 for Bootstrap as per memory/spec
-                // "The AWS connection strategy hardcodes us-east-1 for the Bootstrap process"
+                // Note: Region hardcoded to us-east-1 for Bootstrap as per Network Infrastructure Spec (Section 2.1)
                 val creds =
                     BootstrapCredentials(
                         accessKeyId = currentState.accessKeyId,
                         secretAccessKey = currentState.secretAccessKey,
                         sessionToken = currentState.sessionToken,
-                        region = "us-east-1",
+                        region = BOOTSTRAP_REGION,
                     )
 
                 // Validate against AWS
