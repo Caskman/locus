@@ -18,12 +18,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.locus.android.features.onboarding.NewDeviceViewModel
 
@@ -31,88 +30,123 @@ import com.locus.android.features.onboarding.NewDeviceViewModel
 @Composable
 fun NewDeviceSetupScreen(
     viewModel: NewDeviceViewModel = hiltViewModel(),
-    onDeploy: () -> Unit
+    onDeploy: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("New Device Setup") })
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Name your device",
-                    style = MaterialTheme.typography.titleLarge
-                )
+            NewDeviceContent(
+                uiState = uiState,
+                onDeviceNameChange = { viewModel.updateDeviceName(it) },
+                onCheckAvailability = { viewModel.checkAvailability() },
+                onDeploy = onDeploy,
+            )
+        }
+    }
+}
 
-                Spacer(modifier = Modifier.height(8.dp))
+@Composable
+fun NewDeviceContent(
+    uiState: com.locus.android.features.onboarding.NewDeviceUiState,
+    onDeviceNameChange: (String) -> Unit,
+    onCheckAvailability: () -> Unit,
+    onDeploy: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .widthIn(max = 600.dp)
+                .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        NewDeviceHeader()
 
-                Text(
-                    text = "This will be part of your S3 bucket name. Use lowercase letters, numbers, and hyphens.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
+        OutlinedTextField(
+            value = uiState.deviceName,
+            onValueChange = onDeviceNameChange,
+            label = { Text("Device Name (e.g. pixel-7)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            isError = uiState.error != null,
+        )
 
-                OutlinedTextField(
-                    value = uiState.deviceName,
-                    onValueChange = { viewModel.updateDeviceName(it) },
-                    label = { Text("Device Name (e.g. pixel-7)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    isError = uiState.error != null
-                )
+        if (uiState.error != null) {
+            Text(
+                text = uiState.error!!,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start).padding(top = 4.dp),
+            )
+        }
 
-                if (uiState.error != null) {
-                    Text(
-                        text = uiState.error!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
-                    )
-                }
+        Spacer(modifier = Modifier.height(32.dp))
 
-                Spacer(modifier = Modifier.height(32.dp))
+        NewDeviceActions(
+            uiState = uiState,
+            onCheckAvailability = onCheckAvailability,
+            onDeploy = onDeploy,
+        )
+    }
+}
 
-                if (uiState.isChecking) {
-                    CircularProgressIndicator()
-                } else if (uiState.isAvailable == true) {
-                     Text(
-                        text = "Name is available!",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = onDeploy,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Deploy & Start")
-                    }
-                } else {
-                    Button(
-                        onClick = { viewModel.checkAvailability() },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = uiState.deviceName.isNotEmpty()
-                    ) {
-                        Text("Check Availability")
-                    }
-                }
-            }
+@Composable
+fun NewDeviceHeader() {
+    Text(
+        text = "Name your device",
+        style = MaterialTheme.typography.titleLarge,
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Text(
+        text = "This will be part of your S3 bucket name. Use lowercase letters, numbers, and hyphens.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+fun NewDeviceActions(
+    uiState: com.locus.android.features.onboarding.NewDeviceUiState,
+    onCheckAvailability: () -> Unit,
+    onDeploy: () -> Unit,
+) {
+    if (uiState.isChecking) {
+        CircularProgressIndicator()
+    } else if (uiState.isAvailable == true) {
+        Text(
+            text = "Name is available!",
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = onDeploy,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Deploy & Start")
+        }
+    } else {
+        Button(
+            onClick = onCheckAvailability,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = uiState.deviceName.isNotEmpty(),
+        ) {
+            Text("Check Availability")
         }
     }
 }

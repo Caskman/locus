@@ -21,7 +21,6 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OnboardingViewModelTest {
-
     private val authRepository: AuthRepository = mockk()
     private lateinit var viewModel: OnboardingViewModel
 
@@ -38,13 +37,15 @@ class OnboardingViewModelTest {
     }
 
     @Test
-    fun `checkAuthState updates startDestination`() = runTest {
-        assertThat(viewModel.uiState.value.startDestination).isEqualTo("onboarding")
-    }
+    fun `checkAuthState updates startDestination`() =
+        runTest {
+            assertThat(viewModel.uiState.value.startDestination).isEqualTo("onboarding")
+        }
 
     @Test
     fun `pasteJson parses valid aws json`() {
-        val json = """
+        val json =
+            """
             {
                 "Credentials": {
                     "AccessKeyId": "ASIA...",
@@ -52,7 +53,7 @@ class OnboardingViewModelTest {
                     "SessionToken": "token..."
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         viewModel.pasteJson(json)
 
@@ -70,32 +71,34 @@ class OnboardingViewModelTest {
     }
 
     @Test
-    fun `validateCredentials success updates state`() = runTest {
-        val creds = BootstrapCredentials("key", "secret", "token", "us-east-1")
-        viewModel.updateAccessKeyId("key")
-        viewModel.updateSecretAccessKey("secret")
-        viewModel.updateSessionToken("token")
+    fun `validateCredentials success updates state`() =
+        runTest {
+            val creds = BootstrapCredentials("key", "secret", "token", "us-east-1")
+            viewModel.updateAccessKeyId("key")
+            viewModel.updateSecretAccessKey("secret")
+            viewModel.updateSessionToken("token")
 
-        coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Success(Unit)
-        coEvery { authRepository.saveBootstrapCredentials(any()) } returns LocusResult.Success(Unit)
+            coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Success(Unit)
+            coEvery { authRepository.saveBootstrapCredentials(any()) } returns LocusResult.Success(Unit)
 
-        viewModel.validateCredentials()
+            viewModel.validateCredentials()
 
-        assertThat(viewModel.uiState.value.isCredentialsValid).isTrue()
-        coVerify { authRepository.saveBootstrapCredentials(match { it.accessKeyId == "key" }) }
-    }
+            assertThat(viewModel.uiState.value.isCredentialsValid).isTrue()
+            coVerify { authRepository.saveBootstrapCredentials(match { it.accessKeyId == "key" }) }
+        }
 
     @Test
-    fun `validateCredentials failure sets error`() = runTest {
-         viewModel.updateAccessKeyId("key")
-        viewModel.updateSecretAccessKey("secret")
-        viewModel.updateSessionToken("token")
+    fun `validateCredentials failure sets error`() =
+        runTest {
+            viewModel.updateAccessKeyId("key")
+            viewModel.updateSecretAccessKey("secret")
+            viewModel.updateSessionToken("token")
 
-        coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Failure(Exception("Invalid"))
+            coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Failure(Exception("Invalid"))
 
-        viewModel.validateCredentials()
+            viewModel.validateCredentials()
 
-        assertThat(viewModel.uiState.value.isCredentialsValid).isFalse()
-        assertThat(viewModel.uiState.value.error).contains("Invalid")
-    }
+            assertThat(viewModel.uiState.value.isCredentialsValid).isFalse()
+            assertThat(viewModel.uiState.value.error).contains("Invalid")
+        }
 }

@@ -1,6 +1,5 @@
 package com.locus.android.features.onboarding
 
-import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
@@ -20,19 +19,22 @@ object OnboardingDestinations {
     const val RECOVERY = "recovery"
 }
 
+/**
+ * @param onOnboardingComplete Navigate to Dashboard or Provisioning Status
+ */
 fun NavGraphBuilder.onboardingGraph(
     navController: NavController,
-    onOnboardingComplete: () -> Unit // Navigate to Dashboard or Provisioning Status
+    onOnboardingComplete: () -> Unit,
 ) {
     navigation(
         route = OnboardingDestinations.ROUTE,
-        startDestination = OnboardingDestinations.WELCOME
+        startDestination = OnboardingDestinations.WELCOME,
     ) {
         composable(OnboardingDestinations.WELCOME) {
             WelcomeScreen(
                 onGetStarted = {
                     navController.navigate(OnboardingDestinations.CREDENTIALS)
-                }
+                },
             )
         }
 
@@ -40,7 +42,7 @@ fun NavGraphBuilder.onboardingGraph(
             CredentialEntryScreen(
                 onCredentialsValid = {
                     navController.navigate(OnboardingDestinations.CHOICE)
-                }
+                },
             )
         }
 
@@ -51,7 +53,7 @@ fun NavGraphBuilder.onboardingGraph(
                 },
                 onRecovery = {
                     navController.navigate(OnboardingDestinations.RECOVERY)
-                }
+                },
             )
         }
 
@@ -61,16 +63,16 @@ fun NavGraphBuilder.onboardingGraph(
                     // Start provisioning logic (Task 10)
                     // For now, we consider this "Input flow complete" and maybe go to a placeholder
                     onOnboardingComplete()
-                }
+                },
             )
         }
 
         composable(OnboardingDestinations.RECOVERY) {
             RecoveryScreen(
                 onBucketSelected = { bucketName ->
-                     // Start recovery/linking logic (Task 10)
-                     onOnboardingComplete()
-                }
+                    // Start recovery/linking logic (Task 10)
+                    onOnboardingComplete()
+                },
             )
         }
     }

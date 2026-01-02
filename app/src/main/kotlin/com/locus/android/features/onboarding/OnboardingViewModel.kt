@@ -22,57 +22,69 @@ data class OnboardingUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val isCredentialsValid: Boolean = false,
-    val startDestination: String? = null
+    val startDestination: String? = null,
 )
 
 @HiltViewModel
-class OnboardingViewModel @Inject constructor(
-    private val authRepository: AuthRepository
-) : ViewModel() {
+class OnboardingViewModel
+    @Inject
+    constructor(
+        private val authRepository: AuthRepository,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow(OnboardingUiState())
+        val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(OnboardingUiState())
-    val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
+        init {
+            checkAuthState()
+        }
 
-    init {
-        checkAuthState()
-    }
-
-    private fun checkAuthState() {
-        viewModelScope.launch {
-            authRepository.getAuthState().collect { authState ->
-                val destination = when (authState) {
-                    AuthState.Authenticated -> "dashboard" // Placeholder route name
-                    AuthState.SetupPending -> "provisioning" // Placeholder route name
-                    AuthState.Uninitialized -> "onboarding" // Placeholder route name
+        private fun checkAuthState() {
+            viewModelScope.launch {
+                authRepository.getAuthState().collect { authState ->
+                    val destination =
+                        when (authState) {
+                            AuthState.Authenticated -> "dashboard" // Placeholder route name
+                            AuthState.SetupPending -> "provisioning" // Placeholder route name
+                            AuthState.Uninitialized -> "onboarding" // Placeholder route name
+                        }
+                    _uiState.value = _uiState.value.copy(startDestination = destination)
                 }
-                _uiState.value = _uiState.value.copy(startDestination = destination)
             }
         }
-    }
 
-    fun updateAccessKeyId(value: String) {
-        _uiState.value = _uiState.value.copy(
-            credentials = _uiState.value.credentials.copy(accessKeyId = value),
-            error = null
-        )
-    }
+        fun updateAccessKeyId(value: String) {
+            _uiState.value =
+                _uiState.value.copy(
+                    credentials = _uiState.value.credentials.copy(accessKeyId = value),
+                    error = null,
+                )
+        }
 
-    fun updateSecretAccessKey(value: String) {
-        _uiState.value = _uiState.value.copy(
-            credentials = _uiState.value.credentials.copy(secretAccessKey = value),
-            error = null
-        )
-    }
+        fun updateSecretAccessKey(value: String) {
+            _uiState.value =
+                _uiState.value.copy(
+                    credentials = _uiState.value.credentials.copy(secretAccessKey = value),
+                    error = null,
+                )
+        }
 
-    fun updateSessionToken(value: String) {
-        _uiState.value = _uiState.value.copy(
-            credentials = _uiState.value.credentials.copy(sessionToken = value),
-            error = null
-        )
-    }
+        fun updateSessionToken(value: String) {
+            _uiState.value =
+                _uiState.value.copy(
+                    credentials = _uiState.value.credentials.copy(sessionToken = value),
+                    error = null,
+                )
+        }
 
-    fun pasteJson(jsonString: String) {
-        try {
+        fun pasteJson(jsonString: String) {
+            runCatching {
+                parseAndSetCredentials(jsonString)
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(error = "Failed to parse JSON")
+            }
+        }
+
+        private fun parseAndSetCredentials(jsonString: String) {
             val json = Json { ignoreUnknownKeys = true }
             val jsonObject = json.decodeFromString<JsonObject>(jsonString)
 
@@ -87,53 +99,60 @@ class OnboardingViewModel @Inject constructor(
             val sessionToken = credentialsObject["SessionToken"]?.jsonPrimitive?.contentOrNull
 
             if (accessKeyId != null && secretAccessKey != null && sessionToken != null) {
-                _uiState.value = _uiState.value.copy(
-                    credentials = BootstrapCredentials(
-                        accessKeyId = accessKeyId,
-                        secretAccessKey = secretAccessKey,
-                        sessionToken = sessionToken,
-                        region = "us-east-1" // Default region for bootstrap
-                    ),
-                    error = null
-                )
+                _uiState.value =
+                    _uiState.value.copy(
+                        credentials =
+                            BootstrapCredentials(
+                                accessKeyId = accessKeyId,
+                                secretAccessKey = secretAccessKey,
+                                sessionToken = sessionToken,
+                                // Default region for bootstrap
+                                region = "us-east-1",
+                            ),
+                        error = null,
+                    )
             } else {
-                 _uiState.value = _uiState.value.copy(error = "Invalid JSON format: Missing keys")
+                _uiState.value = _uiState.value.copy(error = "Invalid JSON format: Missing keys")
             }
-
-        } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(error = "Failed to parse JSON")
         }
-    }
 
-    fun validateCredentials() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val creds = _uiState.value.credentials
+        fun validateCredentials() {
+            viewModelScope.launch {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+                val creds = _uiState.value.credentials
 
-            if (creds.accessKeyId.isBlank() || creds.secretAccessKey.isBlank() || creds.sessionToken.isBlank()) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = "All fields are required")
-                return@launch
-            }
+                if (creds.accessKeyId.isBlank() || creds.secretAccessKey.isBlank() || creds.sessionToken.isBlank()) {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = "All fields are required")
+                    return@launch
+                }
 
-            val result = authRepository.validateCredentials(creds)
-            when (result) {
-                is LocusResult.Success -> {
-                    // Save validated credentials
-                    val saveResult = authRepository.saveBootstrapCredentials(creds)
-                    if (saveResult is LocusResult.Success) {
-                        _uiState.value = _uiState.value.copy(isLoading = false, isCredentialsValid = true)
-                    } else {
-                         _uiState.value = _uiState.value.copy(isLoading = false, error = "Failed to save credentials")
+                val result = authRepository.validateCredentials(creds)
+                when (result) {
+                    is LocusResult.Success -> {
+                        // Save validated credentials
+                        val saveResult = authRepository.saveBootstrapCredentials(creds)
+                        if (saveResult is LocusResult.Success) {
+                            _uiState.value = _uiState.value.copy(isLoading = false, isCredentialsValid = true)
+                        } else {
+                            _uiState.value =
+                                _uiState.value.copy(
+                                    isLoading = false,
+                                    error = "Failed to save credentials",
+                                )
+                        }
+                    }
+                    is LocusResult.Failure -> {
+                        _uiState.value =
+                            _uiState.value.copy(
+                                isLoading = false,
+                                error = result.error.message ?: "Validation failed",
+                            )
                     }
                 }
-                is LocusResult.Failure -> {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = result.error.message ?: "Validation failed")
-                }
             }
         }
-    }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        fun clearError() {
+            _uiState.value = _uiState.value.copy(error = null)
+        }
     }
-}
