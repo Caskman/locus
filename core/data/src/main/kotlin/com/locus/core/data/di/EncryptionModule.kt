@@ -36,11 +36,17 @@ object EncryptionModule {
             // This checks if we are likely in a test env where KeyStore is failing
             if (isRobolectric()) {
                 return object : Aead {
-                    override fun encrypt(plaintext: ByteArray, associatedData: ByteArray?): ByteArray {
+                    override fun encrypt(
+                        plaintext: ByteArray,
+                        associatedData: ByteArray?,
+                    ): ByteArray {
                         return plaintext // No-op encryption for tests
                     }
 
-                    override fun decrypt(ciphertext: ByteArray, associatedData: ByteArray?): ByteArray {
+                    override fun decrypt(
+                        ciphertext: ByteArray,
+                        associatedData: ByteArray?,
+                    ): ByteArray {
                         return ciphertext // No-op decryption for tests
                     }
                 }

@@ -38,19 +38,21 @@ fun RecoveryScreen(
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Select Locus Bucket") })
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            contentAlignment = Alignment.Center,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -60,20 +62,21 @@ fun RecoveryScreen(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = uiState.error,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 } else {
                     LazyColumn(
-                         modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
                     ) {
                         if (uiState.buckets.isEmpty()) {
                             item {
                                 Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(32.dp),
-                                    contentAlignment = Alignment.Center
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(32.dp),
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Text("No Locus stores found.")
                                 }
@@ -82,7 +85,7 @@ fun RecoveryScreen(
                             items(uiState.buckets) { bucket ->
                                 ListItem(
                                     headlineContent = { Text(bucket) },
-                                    modifier = Modifier.clickable { onBucketSelected(bucket) }
+                                    modifier = Modifier.clickable { onBucketSelected(bucket) },
                                 )
                                 HorizontalDivider()
                             }

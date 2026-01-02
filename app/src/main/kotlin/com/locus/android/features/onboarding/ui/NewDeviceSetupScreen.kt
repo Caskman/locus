@@ -14,17 +14,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.locus.android.features.onboarding.NewDeviceUiState
 
@@ -39,25 +36,27 @@ fun NewDeviceSetupScreen(
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("New Device Setup") })
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            contentAlignment = Alignment.Center,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = "Name your device stack (e.g. 'pixel-7')",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -66,12 +65,11 @@ fun NewDeviceSetupScreen(
                     value = uiState.deviceName,
                     onValueChange = {
                         onDeviceNameChanged(it)
-                        // Optional: Debounce check here if we wanted auto-check
                     },
                     label = { Text("Device Name") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    isError = uiState.error != null
+                    isError = uiState.error != null,
                 )
 
                 if (uiState.error != null) {
@@ -79,16 +77,16 @@ fun NewDeviceSetupScreen(
                         text = uiState.error,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
 
                 if (uiState.availabilityMessage != null) {
                     Text(
                         text = uiState.availabilityMessage,
-                        color = MaterialTheme.colorScheme.primary, // Or Success color if available
+                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
 
@@ -98,8 +96,8 @@ fun NewDeviceSetupScreen(
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 } else if (uiState.isNameValid && uiState.error == null) {
                     Button(
-                        onClick = onCheckAvailability, // Or direct deploy if we skip separate check step
-                         modifier = Modifier.fillMaxWidth()
+                        onClick = onCheckAvailability,
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Check Availability")
                     }
@@ -110,8 +108,8 @@ fun NewDeviceSetupScreen(
                 // Deploy button enabled only if available
                 Button(
                     onClick = onDeploy,
-                    enabled = uiState.availabilityMessage != null, // Assuming availability message implies success
-                    modifier = Modifier.fillMaxWidth()
+                    enabled = uiState.availabilityMessage != null,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Deploy Stack")
                 }

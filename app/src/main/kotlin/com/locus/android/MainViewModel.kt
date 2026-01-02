@@ -11,14 +11,16 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
-    authRepository: AuthRepository
-) : ViewModel() {
-
-    val authState: StateFlow<AuthState> = authRepository.getAuthState()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = AuthState.Uninitialized
-        )
-}
+class MainViewModel
+    @Inject
+    constructor(
+        authRepository: AuthRepository,
+    ) : ViewModel() {
+        val authState: StateFlow<AuthState> =
+            authRepository.getAuthState()
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5000),
+                    initialValue = AuthState.Uninitialized,
+                )
+    }

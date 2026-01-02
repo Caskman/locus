@@ -31,40 +31,40 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WelcomeScreen(
-    onGetStarted: () -> Unit,
-) {
+fun WelcomeScreen(onGetStarted: () -> Unit) {
     var showHelp by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Locus") })
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            contentAlignment = Alignment.Center,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = "Welcome to Locus",
                     style = MaterialTheme.typography.headlineLarge,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Your high-precision location tracker. Data stays in your AWS account.",
                     style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -73,14 +73,14 @@ fun WelcomeScreen(
                     text = "Standard AWS S3 usage rates apply (<$0.10/month for typical usage).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
                     onClick = onGetStarted,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Get Started")
                 }
@@ -97,19 +97,23 @@ fun WelcomeScreen(
     if (showHelp) {
         ModalBottomSheet(
             onDismissRequest = { showHelp = false },
-            sheetState = rememberModalBottomSheetState()
+            sheetState = rememberModalBottomSheetState(),
         ) {
             Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState())
+                modifier =
+                    Modifier
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
             ) {
                 Text(
                     text = "Generating AWS Keys",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("1. Log in to AWS Console.\n2. Open CloudShell.\n3. Run: aws sts get-session-token --duration-seconds 3600\n4. Copy the JSON output.")
+                Text(
+                    "1. Log in to AWS Console.\n2. Open CloudShell.\n3. Run: " +
+                        "aws sts get-session-token --duration-seconds 3600\n4. Copy the JSON output.",
+                )
                 Spacer(modifier = Modifier.height(48.dp)) // Bottom padding
             }
         }

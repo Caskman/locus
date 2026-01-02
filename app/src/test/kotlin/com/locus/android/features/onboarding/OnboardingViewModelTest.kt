@@ -2,7 +2,6 @@ package com.locus.android.features.onboarding
 
 import com.google.common.truth.Truth.assertThat
 import com.locus.core.domain.model.auth.AuthState
-import com.locus.core.domain.model.auth.BootstrapCredentials
 import com.locus.core.domain.repository.AuthRepository
 import com.locus.core.domain.result.LocusResult
 import io.mockk.coEvery
@@ -26,7 +25,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class OnboardingViewModelTest {
-
     private lateinit var viewModel: OnboardingViewModel
     private val authRepository: AuthRepository = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
@@ -45,13 +43,14 @@ class OnboardingViewModelTest {
 
     @Test
     fun `pasteJson parses valid json correctly`() {
-        val validJson = """
+        val validJson =
+            """
             {
                 "AccessKeyId": "testKey",
                 "SecretAccessKey": "testSecret",
                 "SessionToken": "testToken"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         viewModel.pasteJson(validJson)
 
@@ -74,11 +73,12 @@ class OnboardingViewModelTest {
 
     @Test
     fun `pasteJson handles missing keys`() {
-         val json = """
+        val json =
+            """
             {
                 "AccessKeyId": "testKey"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         viewModel.pasteJson(json)
 
@@ -87,33 +87,35 @@ class OnboardingViewModelTest {
     }
 
     @Test
-    fun `validateCredentials calls repository and updates state on success`() = runTest {
-        viewModel.onAccessKeyIdChanged("key")
-        viewModel.onSecretAccessKeyChanged("secret")
-        viewModel.onSessionTokenChanged("token")
+    fun `validateCredentials calls repository and updates state on success`() =
+        runTest {
+            viewModel.onAccessKeyIdChanged("key")
+            viewModel.onSecretAccessKeyChanged("secret")
+            viewModel.onSessionTokenChanged("token")
 
-        coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Success(Unit)
-        coEvery { authRepository.saveBootstrapCredentials(any()) } returns LocusResult.Success(Unit)
+            coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Success(Unit)
+            coEvery { authRepository.saveBootstrapCredentials(any()) } returns LocusResult.Success(Unit)
 
-        viewModel.validateCredentials()
-        testDispatcher.scheduler.advanceUntilIdle()
+            viewModel.validateCredentials()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { authRepository.validateCredentials(any()) }
-        coVerify { authRepository.saveBootstrapCredentials(any()) }
-        // We would also check for the event emission if we could easily collect it in this test setup
-    }
+            coVerify { authRepository.validateCredentials(any()) }
+            coVerify { authRepository.saveBootstrapCredentials(any()) }
+            // We would also check for the event emission if we could easily collect it in this test setup
+        }
 
     @Test
-    fun `validateCredentials sets error on failure`() = runTest {
-         viewModel.onAccessKeyIdChanged("key")
-        viewModel.onSecretAccessKeyChanged("secret")
-        viewModel.onSessionTokenChanged("token")
+    fun `validateCredentials sets error on failure`() =
+        runTest {
+            viewModel.onAccessKeyIdChanged("key")
+            viewModel.onSecretAccessKeyChanged("secret")
+            viewModel.onSessionTokenChanged("token")
 
-        coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Failure(Exception("Fail"))
+            coEvery { authRepository.validateCredentials(any()) } returns LocusResult.Failure(Exception("Fail"))
 
-        viewModel.validateCredentials()
-        testDispatcher.scheduler.advanceUntilIdle()
+            viewModel.validateCredentials()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.error).contains("Invalid credentials")
-    }
+            assertThat(viewModel.uiState.value.error).contains("Invalid credentials")
+        }
 }

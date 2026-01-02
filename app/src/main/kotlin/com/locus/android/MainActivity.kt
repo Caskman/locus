@@ -18,7 +18,6 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,7 +37,7 @@ class MainActivity : ComponentActivity() {
                                     // Normally we would re-check auth state or explicit nav,
                                     // but AuthState.Authenticated will naturally trigger the switch
                                     // if logic is correct.
-                                }
+                                },
                             )
                         }
                         AuthState.Authenticated -> {

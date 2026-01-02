@@ -12,7 +12,6 @@ import com.locus.core.domain.model.auth.BootstrapCredentials
 import com.locus.core.domain.model.auth.ProvisioningState
 import com.locus.core.domain.model.auth.RuntimeCredentials
 import com.locus.core.domain.repository.AuthRepository
-import com.locus.core.domain.result.DomainException
 import com.locus.core.domain.result.DomainException.AuthError
 import com.locus.core.domain.result.DomainException.ProvisioningError
 import com.locus.core.domain.result.LocusResult

@@ -2,7 +2,6 @@ package com.locus.android.features.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.locus.core.domain.model.auth.AuthState
 import com.locus.core.domain.model.auth.BootstrapCredentials
 import com.locus.core.domain.repository.AuthRepository
 import com.locus.core.domain.result.LocusResult
@@ -27,109 +26,120 @@ data class OnboardingUiState(
 
 sealed class OnboardingEvent {
     data object CredentialsValidated : OnboardingEvent()
+
     data class NavigateTo(val route: String) : OnboardingEvent()
 }
 
 @HiltViewModel
-class OnboardingViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-) : ViewModel() {
+class OnboardingViewModel
+    @Inject
+    constructor(
+        private val authRepository: AuthRepository,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow(OnboardingUiState())
+        val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(OnboardingUiState())
-    val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
+        private val _event = Channel<OnboardingEvent>()
+        val event = _event.receiveAsFlow()
 
-    private val _event = Channel<OnboardingEvent>()
-    val event = _event.receiveAsFlow()
-
-    init {
-        checkAuthState()
-    }
-
-    private fun checkAuthState() {
-        viewModelScope.launch {
-            authRepository.getAuthState().collect { state ->
-                // Initial check logic could go here, but navigation is mostly handled by MainActivity/NavGraph
-                // watching AuthRepository state.
-            }
+        init {
+            checkAuthState()
         }
-    }
 
-    fun onAccessKeyIdChanged(value: String) {
-        _uiState.update { it.copy(accessKeyId = value, error = null) }
-    }
-
-    fun onSecretAccessKeyChanged(value: String) {
-        _uiState.update { it.copy(secretAccessKey = value, error = null) }
-    }
-
-    fun onSessionTokenChanged(value: String) {
-        _uiState.update { it.copy(sessionToken = value, error = null) }
-    }
-
-    fun pasteJson(json: String) {
-        try {
-            val jsonObject = JSONObject(json)
-            // Retrieve keys case-insensitively or try standard AWS CLI keys
-            val accessKeyId = jsonObject.optString("AccessKeyId").ifEmpty {
-                jsonObject.optString("accessKeyId")
-            }
-            val secretAccessKey = jsonObject.optString("SecretAccessKey").ifEmpty {
-                jsonObject.optString("secretAccessKey")
-            }
-            val sessionToken = jsonObject.optString("SessionToken").ifEmpty {
-                jsonObject.optString("sessionToken")
-            }
-
-            if (accessKeyId.isNotBlank() && secretAccessKey.isNotBlank() && sessionToken.isNotBlank()) {
-                _uiState.update {
-                    it.copy(
-                        accessKeyId = accessKeyId,
-                        secretAccessKey = secretAccessKey,
-                        sessionToken = sessionToken,
-                        error = null
-                    )
+        private fun checkAuthState() {
+            viewModelScope.launch {
+                authRepository.getAuthState().collect { state ->
+                    // Initial check logic could go here, but navigation is mostly handled by MainActivity/NavGraph
+                    // watching AuthRepository state.
                 }
-            } else {
-                _uiState.update { it.copy(error = "Invalid JSON format: Missing required keys") }
             }
-        } catch (e: Exception) {
-            _uiState.update { it.copy(error = "Failed to parse JSON") }
-        }
-    }
-
-    fun validateCredentials() {
-        val currentState = _uiState.value
-        if (currentState.accessKeyId.isBlank() || currentState.secretAccessKey.isBlank() || currentState.sessionToken.isBlank()) {
-            _uiState.update { it.copy(error = "All fields are required") }
-            return
         }
 
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            // Note: Region hardcoded to us-east-1 for Bootstrap as per memory/spec
-            // "The AWS connection strategy hardcodes us-east-1 for the Bootstrap process"
-            val creds = BootstrapCredentials(
-                accessKeyId = currentState.accessKeyId,
-                secretAccessKey = currentState.secretAccessKey,
-                sessionToken = currentState.sessionToken,
-                region = "us-east-1"
-            )
+        fun onAccessKeyIdChanged(value: String) {
+            _uiState.update { it.copy(accessKeyId = value, error = null) }
+        }
 
-            // Validate against AWS
-            val validationResult = authRepository.validateCredentials(creds)
+        fun onSecretAccessKeyChanged(value: String) {
+            _uiState.update { it.copy(secretAccessKey = value, error = null) }
+        }
 
-            if (validationResult is LocusResult.Success) {
-                // Save credentials to secure storage
-                val saveResult = authRepository.saveBootstrapCredentials(creds)
-                if (saveResult is LocusResult.Success) {
-                    _event.send(OnboardingEvent.CredentialsValidated)
+        fun onSessionTokenChanged(value: String) {
+            _uiState.update { it.copy(sessionToken = value, error = null) }
+        }
+
+        fun pasteJson(json: String) {
+            try {
+                val jsonObject = JSONObject(json)
+                // Retrieve keys case-insensitively or try standard AWS CLI keys
+                val accessKeyId =
+                    jsonObject.optString("AccessKeyId").ifEmpty {
+                        jsonObject.optString("accessKeyId")
+                    }
+                val secretAccessKey =
+                    jsonObject.optString("SecretAccessKey").ifEmpty {
+                        jsonObject.optString("secretAccessKey")
+                    }
+                val sessionToken =
+                    jsonObject.optString("SessionToken").ifEmpty {
+                        jsonObject.optString("sessionToken")
+                    }
+
+                if (accessKeyId.isNotBlank() && secretAccessKey.isNotBlank() && sessionToken.isNotBlank()) {
+                    _uiState.update {
+                        it.copy(
+                            accessKeyId = accessKeyId,
+                            secretAccessKey = secretAccessKey,
+                            sessionToken = sessionToken,
+                            error = null,
+                        )
+                    }
                 } else {
-                    _uiState.update { it.copy(error = "Failed to save credentials") }
+                    _uiState.update { it.copy(error = "Invalid JSON format: Missing required keys") }
                 }
-            } else {
-                 _uiState.update { it.copy(error = "Invalid credentials or network error") }
+            } catch (
+                @Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception,
+            ) {
+                _uiState.update { it.copy(error = "Failed to parse JSON") }
             }
-            _uiState.update { it.copy(isLoading = false) }
+        }
+
+        fun validateCredentials() {
+            val currentState = _uiState.value
+            if (currentState.accessKeyId.isBlank() ||
+                currentState.secretAccessKey.isBlank() ||
+                currentState.sessionToken.isBlank()
+            ) {
+                _uiState.update { it.copy(error = "All fields are required") }
+                return
+            }
+
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+                // Note: Region hardcoded to us-east-1 for Bootstrap as per memory/spec
+                // "The AWS connection strategy hardcodes us-east-1 for the Bootstrap process"
+                val creds =
+                    BootstrapCredentials(
+                        accessKeyId = currentState.accessKeyId,
+                        secretAccessKey = currentState.secretAccessKey,
+                        sessionToken = currentState.sessionToken,
+                        region = "us-east-1",
+                    )
+
+                // Validate against AWS
+                val validationResult = authRepository.validateCredentials(creds)
+
+                if (validationResult is LocusResult.Success) {
+                    // Save credentials to secure storage
+                    val saveResult = authRepository.saveBootstrapCredentials(creds)
+                    if (saveResult is LocusResult.Success) {
+                        _event.send(OnboardingEvent.CredentialsValidated)
+                    } else {
+                        _uiState.update { it.copy(error = "Failed to save credentials") }
+                    }
+                } else {
+                    _uiState.update { it.copy(error = "Invalid credentials or network error") }
+                }
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
-}

@@ -25,15 +25,15 @@ object OnboardingDestinations {
 @Composable
 fun OnboardingNavigation(
     navController: NavHostController = rememberNavController(),
-    onOnboardingComplete: () -> Unit = {}
+    onOnboardingComplete: () -> Unit = {},
 ) {
     NavHost(
         navController = navController,
-        startDestination = OnboardingDestinations.WELCOME
+        startDestination = OnboardingDestinations.WELCOME,
     ) {
         composable(OnboardingDestinations.WELCOME) {
             WelcomeScreen(
-                onGetStarted = { navController.navigate(OnboardingDestinations.CREDENTIALS) }
+                onGetStarted = { navController.navigate(OnboardingDestinations.CREDENTIALS) },
             )
         }
 
@@ -41,37 +41,17 @@ fun OnboardingNavigation(
             val viewModel: OnboardingViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsState()
 
-            // Observe single-shot events if needed, e.g. using LaunchedEffect(viewModel.event)
-
-            // Handling success transition manually for now based on a hypothetical event or state change.
-            // In a real app we'd use Flow collection for events.
-            androidx.compose.runtime.LaunchedEffect(Unit) {
-                viewModel.event.collect { event ->
-                    when (event) {
-                        is OnboardingEvent.CredentialsValidated -> {
-                            navController.navigate(OnboardingDestinations.CHOICE)
-                        }
-                        is OnboardingEvent.NavigateTo -> {
-                            navController.navigate(event.route)
-                        }
-                    }
-                }
-            }
-
-            CredentialEntryScreen(
-                uiState = state,
-                onAccessKeyIdChanged = viewModel::onAccessKeyIdChanged,
-                onSecretAccessKeyChanged = viewModel::onSecretAccessKeyChanged,
-                onSessionTokenChanged = viewModel::onSessionTokenChanged,
-                onPasteJson = viewModel::pasteJson,
-                onValidate = viewModel::validateCredentials
+            CredentialsRoute(
+                viewModel = viewModel,
+                state = state,
+                navController = navController,
             )
         }
 
         composable(OnboardingDestinations.CHOICE) {
             ChoiceScreen(
                 onNewDevice = { navController.navigate(OnboardingDestinations.NEW_DEVICE) },
-                onRecovery = { navController.navigate(OnboardingDestinations.RECOVERY) }
+                onRecovery = { navController.navigate(OnboardingDestinations.RECOVERY) },
             )
         }
 
@@ -87,7 +67,7 @@ fun OnboardingNavigation(
                     // Trigger deployment (Task 10/11)
                     // For now just simulate completion
                     onOnboardingComplete()
-                }
+                },
             )
         }
 
@@ -98,11 +78,42 @@ fun OnboardingNavigation(
             RecoveryScreen(
                 uiState = state,
                 onLoadBuckets = viewModel::loadBuckets,
-                onBucketSelected = { bucket ->
+                onBucketSelected = {
                     // Handle selection (Task 10/11)
-                     onOnboardingComplete()
-                }
+                    onOnboardingComplete()
+                },
             )
         }
     }
+}
+
+@Composable
+fun CredentialsRoute(
+    viewModel: OnboardingViewModel,
+    state: OnboardingUiState,
+    navController: NavHostController,
+) {
+    // Handling success transition manually for now based on a hypothetical event or state change.
+    // In a real app we'd use Flow collection for events.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when (event) {
+                is OnboardingEvent.CredentialsValidated -> {
+                    navController.navigate(OnboardingDestinations.CHOICE)
+                }
+                is OnboardingEvent.NavigateTo -> {
+                    navController.navigate(event.route)
+                }
+            }
+        }
+    }
+
+    CredentialEntryScreen(
+        uiState = state,
+        onAccessKeyIdChanged = viewModel::onAccessKeyIdChanged,
+        onSecretAccessKeyChanged = viewModel::onSecretAccessKeyChanged,
+        onSessionTokenChanged = viewModel::onSessionTokenChanged,
+        onPasteJson = viewModel::pasteJson,
+        onValidate = viewModel::validateCredentials,
+    )
 }

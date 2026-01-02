@@ -30,17 +30,19 @@ class LocusApp : Application(), Configuration.Provider {
     init {
         // Register Tink configs globally early, before Hilt injection
         try {
-             // Avoid Tink registration in Unit Tests/Robolectric if it causes Keystore issues
-             // We can check if we are running in Robolectric
-             if (!isRobolectric()) {
-                 TinkConfig.register()
-             }
+            // Avoid Tink registration in Unit Tests/Robolectric if it causes Keystore issues
+            // We can check if we are running in Robolectric
+            if (!isRobolectric()) {
+                TinkConfig.register()
+            }
         } catch (
             @Suppress("SwallowedException") e: GeneralSecurityException,
         ) {
             // Should not happen in normal runtime, but safe to ignore if already registered
-        } catch (e: Exception) {
-             // Catch other exceptions just in case
+        } catch (
+            @Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception,
+        ) {
+            // Catch other exceptions just in case
         }
     }
 

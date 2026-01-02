@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -44,21 +43,23 @@ fun CredentialEntryScreen(
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Enter Credentials") })
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            contentAlignment = Alignment.Center,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 OutlinedButton(
                     onClick = {
@@ -67,7 +68,7 @@ fun CredentialEntryScreen(
                             onPasteJson(text)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Paste from Clipboard (JSON)")
                 }
@@ -79,7 +80,7 @@ fun CredentialEntryScreen(
                     onValueChange = onAccessKeyIdChanged,
                     label = { Text("Access Key ID") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -90,7 +91,7 @@ fun CredentialEntryScreen(
                     label = { Text("Secret Access Key") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -100,7 +101,7 @@ fun CredentialEntryScreen(
                     onValueChange = onSessionTokenChanged,
                     label = { Text("Session Token") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    minLines = 3,
                 )
 
                 if (uiState.error != null) {
@@ -108,7 +109,7 @@ fun CredentialEntryScreen(
                     Text(
                         text = uiState.error,
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
 
@@ -119,7 +120,7 @@ fun CredentialEntryScreen(
                 } else {
                     Button(
                         onClick = onValidate,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Validate")
                     }
