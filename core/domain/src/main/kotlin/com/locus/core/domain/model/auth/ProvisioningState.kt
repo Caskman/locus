@@ -15,7 +15,10 @@ sealed class ProvisioningState {
 
     data object Success : ProvisioningState()
 
-    data class Failure(val error: DomainException) : ProvisioningState()
+    data class Failure(
+        val error: DomainException,
+        val history: List<String> = emptyList(),
+    ) : ProvisioningState()
 
     companion object {
         const val MAX_HISTORY_SIZE = 100
