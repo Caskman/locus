@@ -20,6 +20,7 @@ No automated refactoring required.
 1.  **Refactor `ProvisioningState`:**
     -   Change the sealed hierarchy to support granular updates.
     -   Example: `data class Working(val currentStep: String, val history: List<String>) : ProvisioningState()` instead of individual object states for every step.
+    -   **Constraint:** The `history` list must be implemented as a **Bounded Circular Buffer** (e.g., max 100 items) to prevent unbounded memory growth during long sessions.
 2.  **Update `ProvisioningUseCase` & `RecoverAccountUseCase`:**
     -   Emit granular `Working` states with descriptive strings (e.g., "Creating S3 Bucket", "Deploying CloudFormation").
 3.  **Update Domain Tests (Crucial):**
@@ -33,6 +34,9 @@ No automated refactoring required.
 1.  **Update `AuthRepository` (Persistence):**
     -   Implement `getOnboardingStage()` and `setOnboardingStage(stage)` backed by `EncryptedSharedPreferences` (or similar secure persistence).
     -   Stages: `IDLE`, `PROVISIONING`, `PERMISSIONS_PENDING`, `COMPLETE`.
+    -   **Error Handling:**
+        -   **Read:** Wrap in `try/catch`. On failure (e.g., Keystore issues), return a safe default (e.g., `IDLE` or `PERMISSIONS_PENDING`) to ensure security rules are not bypassed.
+        -   **Write:** Wrap in `try/catch`. Log failures but do not crash; maintain state in-memory for the current session.
 2.  **Update `MainViewModel`:**
     -   Expose the persistent `onboardingStage`.
     -   Logic: If `stage == PERMISSIONS_PENDING`, lock the user into the Permission flow.
@@ -54,8 +58,11 @@ No automated refactoring required.
     -   **Logic:** Updates persistent stage to `PERMISSIONS_PENDING`.
 3.  **Create `PermissionScreen` (The Two-Step Dance):**
     -   **Step 1:** Explain & Request Foreground Location (`ACCESS_FINE_LOCATION`).
-    -   **Step 2:** Explain & Request Background Location (`ACCESS_BACKGROUND_LOCATION`) - typically requires sending user to Settings on Android 11+.
+    -   **Step 2:** Explain & Request Background Location (`ACCESS_BACKGROUND_LOCATION`) - typically requires sending user to Settings on Android 11 (API 30+).
     -   **Logic:** Once granted, call `viewModel.completeOnboarding()` (sets stage to `COMPLETE`).
+    -   **Denial Handling:**
+        -   **Standard Denial:** Show rationale and keep "Continue/Retry" button available.
+        -   **Permanent Denial:** If "Don't ask again" is detected, redirect the user to **App Settings**.
 
 ### Step 4: Integration & Navigation Wiring
 **Goal:** Connect the flows in the correct order: Provisioning -> Success -> Permissions -> Dashboard.
