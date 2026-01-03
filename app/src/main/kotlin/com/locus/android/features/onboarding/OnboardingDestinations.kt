@@ -28,8 +28,13 @@ object OnboardingDestinations {
     const val PERMISSIONS = "permissions"
 }
 
+import androidx.compose.runtime.rememberCoroutineScope
+import com.locus.android.MainViewModel
+import kotlinx.coroutines.launch
+
 @Composable
 fun OnboardingNavigation(
+    mainViewModel: MainViewModel,
     navController: NavHostController = rememberNavController(),
     startDestination: String = OnboardingDestinations.WELCOME,
     onOnboardingComplete: () -> Unit = {},
@@ -115,10 +120,14 @@ fun OnboardingNavigation(
         }
 
         composable(OnboardingDestinations.SUCCESS) {
+            val scope = rememberCoroutineScope()
             SuccessScreen(
                 onContinue = {
-                    navController.navigate(OnboardingDestinations.PERMISSIONS) {
-                        popUpTo(OnboardingDestinations.SUCCESS) { inclusive = true }
+                    scope.launch {
+                        mainViewModel.advanceToPermissions()
+                        navController.navigate(OnboardingDestinations.PERMISSIONS) {
+                            popUpTo(OnboardingDestinations.SUCCESS) { inclusive = true }
+                        }
                     }
                 },
             )
