@@ -2,9 +2,13 @@ package com.locus.android.features.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.locus.android.features.onboarding.work.ProvisioningWorker
 import com.locus.core.domain.model.auth.ProvisioningState
 import com.locus.core.domain.repository.AuthRepository
-import com.locus.core.domain.usecase.ProvisioningUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +33,7 @@ class NewDeviceViewModel
     @Inject
     constructor(
         private val authRepository: AuthRepository,
-        private val provisioningUseCase: ProvisioningUseCase,
+        private val workManager: WorkManager,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(NewDeviceUiState())
         val uiState: StateFlow<NewDeviceUiState> = _uiState.asStateFlow()
@@ -81,34 +85,22 @@ class NewDeviceViewModel
 
         fun deployStack() {
             val name = _uiState.value.deviceName
-            viewModelScope.launch {
-                // We should run this via WorkManager or Service in real implementation
-                // But Phase 1 uses UseCase call directly for simplicity (Task 9 plan implies Service is integrated later or logic is here).
-                // Actually the plan mentioned "StackProvisioningService".
-                // The UseCase calls the Service.
-                // We must run this in a way that survives config changes? ViewModelScope survives config changes.
-                // But process death? The plan talks about "The Trap", implying we might die.
-                // If we die, the Service (if used) survives.
-                // But `ProvisioningUseCase` is just a suspend function.
-                // It calls `StackProvisioningService.createAndPollStack`.
-                // If that service is just a class, it runs in ViewModelScope.
-                //
-                // To support Process Death, we need Foreground Service or WorkManager.
-                // Task 7 "Provisioning Worker" was planned. Did I implement it?
-                // The memory says "Path B: Domain State Machine + Foreground Service".
-                // So I should trigger the Service here.
-                // However, for this specific task "Execute Onboarding UI", I might be just wiring the UseCase directly
-                // if the Service wiring isn't done.
-                // Let's check if `ProvisioningService` (Android Service) exists.
+            // Enqueue WorkManager job to ensure process survival
+            val workRequest =
+                OneTimeWorkRequest.Builder(ProvisioningWorker::class.java)
+                    .setInputData(
+                        workDataOf(
+                            ProvisioningWorker.KEY_MODE to ProvisioningWorker.MODE_PROVISION,
+                            ProvisioningWorker.KEY_DEVICE_NAME to name,
+                        ),
+                    )
+                    .build()
 
-                // I'll call the usecase for now. If it blocks, it blocks.
-                // It updates AuthRepository state, which we observe.
-
-                val credsResult = authRepository.getBootstrapCredentials()
-                if (credsResult is com.locus.core.domain.result.LocusResult.Success && credsResult.data != null) {
-                    provisioningUseCase(credsResult.data!!, name)
-                }
-            }
+            workManager.enqueueUniqueWork(
+                ProvisioningWorker.WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
+                workRequest,
+            )
         }
 
         fun reset() {

@@ -34,6 +34,7 @@ dependencies {
 
     // DataStore & Security
     implementation(libs.androidx.datastore)
+    implementation(libs.androidx.security.crypto)
     implementation(libs.tink.android)
 
     // Hilt

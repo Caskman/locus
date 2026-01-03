@@ -2,10 +2,14 @@ package com.locus.android.features.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.locus.android.features.onboarding.work.ProvisioningWorker
 import com.locus.core.domain.model.auth.BucketValidationStatus
 import com.locus.core.domain.model.auth.ProvisioningState
 import com.locus.core.domain.repository.AuthRepository
-import com.locus.core.domain.usecase.RecoverAccountUseCase
 import com.locus.core.domain.usecase.ScanBucketsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,8 +32,8 @@ class RecoveryViewModel
     @Inject
     constructor(
         private val authRepository: AuthRepository,
-        private val recoverAccountUseCase: RecoverAccountUseCase,
         private val scanBucketsUseCase: ScanBucketsUseCase,
+        private val workManager: WorkManager,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(RecoveryUiState())
         val uiState: StateFlow<RecoveryUiState> = _uiState.asStateFlow()
@@ -82,11 +86,20 @@ class RecoveryViewModel
         }
 
         fun recoverAccount(bucketName: String) {
-            viewModelScope.launch {
-                val credsResult = authRepository.getBootstrapCredentials()
-                if (credsResult is com.locus.core.domain.result.LocusResult.Success && credsResult.data != null) {
-                    recoverAccountUseCase(credsResult.data!!, bucketName)
-                }
-            }
+            val workRequest =
+                OneTimeWorkRequest.Builder(ProvisioningWorker::class.java)
+                    .setInputData(
+                        workDataOf(
+                            ProvisioningWorker.KEY_MODE to ProvisioningWorker.MODE_RECOVER,
+                            ProvisioningWorker.KEY_BUCKET_NAME to bucketName,
+                        ),
+                    )
+                    .build()
+
+            workManager.enqueueUniqueWork(
+                ProvisioningWorker.WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
+                workRequest,
+            )
         }
     }
