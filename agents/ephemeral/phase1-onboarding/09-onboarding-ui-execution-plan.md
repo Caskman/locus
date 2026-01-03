@@ -8,6 +8,26 @@
 - `docs/technical_discovery/specs/ui/onboarding.md`
 - `docs/technical_discovery/user_flows/onboarding.md`
 
+## Technical Refinements (PR #313 Feedback)
+
+The following refinements are mandatory based on code review feedback from the initial implementation attempt:
+
+1.  **Dependency Injection (Test Isolation):**
+    -   **Problem:** Using `if (::authRepository.isInitialized)` in production `LocusApp` to handle test scenarios is an anti-pattern.
+    -   **Solution:** Create a `TestLocusApp : Application()` in `src/test` and configure Robolectric to use it via `robolectric.properties`. Remove the initialization checks from the production `LocusApp`.
+
+2.  **Security Logging:**
+    -   **Problem:** The `EncryptionModule` falls back to a No-Op AEAD for tests, which is risky if accidentally triggered.
+    -   **Solution:** Add an explicit `android.util.Log.w` warning inside the `isRobolectric()` check to alert developers if the insecure implementation is loaded.
+
+3.  **Hardcoded Strings:**
+    -   **Problem:** UI text (e.g., Cost Disclaimer, App Name in TopBar) was hardcoded.
+    -   **Solution:** Extract all UI strings to `strings.xml` (e.g., `R.string.cost_disclaimer`) and use `stringResource()`.
+
+4.  **Constants & Magic Strings:**
+    -   **Problem:** Use of magic strings like "existing" (for mock logic) and "us-east-1" (configuration).
+    -   **Solution:** Extract these to named private constants (e.g., `MOCK_EXISTING_DEVICE_KEYWORD`, `BOOTSTRAP_REGION`).
+
 ## Prerequisites: Human Action Steps
 
 No automated refactoring required.
