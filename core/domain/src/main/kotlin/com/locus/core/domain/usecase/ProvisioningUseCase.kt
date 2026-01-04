@@ -89,6 +89,10 @@ class ProvisioningUseCase
                     is LocusResult.Failure -> return stackResult // Service handles failure state update
                 }
 
+            // Sync history from service
+            history.clear()
+            history.addAll(resultData.history)
+
             completeStep("Deployed CloudFormation Stack")
 
             val outputs = resultData.outputs

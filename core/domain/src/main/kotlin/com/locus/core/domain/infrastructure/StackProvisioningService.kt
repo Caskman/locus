@@ -116,7 +116,13 @@ class StackProvisioningService
                         if (details.outputs == null) {
                             return fail(DomainException.ProvisioningError.DeploymentFailed("Missing stack outputs"))
                         }
-                        return LocusResult.Success(StackProvisioningResult(details.stackId ?: "", details.outputs))
+                        return LocusResult.Success(
+                            StackProvisioningResult(
+                                details.stackId ?: "",
+                                details.outputs,
+                                initialHistory.toList(),
+                            ),
+                        )
                     }
 
                     if (PERMANENT_ERROR_STATUSES.contains(details.status)) {

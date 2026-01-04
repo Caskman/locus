@@ -2,6 +2,7 @@ package com.locus.core.domain.usecase
 
 import com.locus.core.domain.infrastructure.InfrastructureConstants.OUT_RUNTIME_ACCESS_KEY
 import com.locus.core.domain.infrastructure.InfrastructureConstants.OUT_RUNTIME_SECRET_KEY
+import com.locus.core.domain.infrastructure.InfrastructureConstants.STACK_NAME_PREFIX
 import com.locus.core.domain.infrastructure.ResourceProvider
 import com.locus.core.domain.infrastructure.S3Client
 import com.locus.core.domain.infrastructure.StackProvisioningService
@@ -77,8 +78,8 @@ class RecoverAccountUseCase
 
             // 3. Create New Stack (Recovery)
             // We create a NEW stack for the new device but point it to the EXISTING bucket.
-            val newDeviceName = UUID.randomUUID().toString()
-            val newStackName = "locus-user-$newDeviceName"
+            val newDeviceId = UUID.randomUUID().toString()
+            val newStackName = "$STACK_NAME_PREFIX$newDeviceId"
 
             val stackResult =
                 stackProvisioningService.createAndPollStack(
@@ -95,6 +96,10 @@ class RecoverAccountUseCase
                     is LocusResult.Success -> stackResult.data
                     is LocusResult.Failure -> return stackResult
                 }
+
+            // Sync history from service
+            history.clear()
+            history.addAll(resultData.history)
 
             completeStep("Deployed Recovery Stack")
 
@@ -118,7 +123,7 @@ class RecoverAccountUseCase
             updateStep(step5)
 
             // Generate NEW device ID for this installation to avoid split-brain
-            val newDeviceId = UUID.randomUUID().toString()
+            // (Used above for stack naming as well)
             val newSalt = AuthUtils.generateSalt()
 
             val initResult = configRepository.initializeIdentity(newDeviceId, newSalt)
