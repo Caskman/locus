@@ -1,7 +1,11 @@
 package com.locus.android.features.onboarding
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.locus.android.R
+import com.locus.core.domain.model.auth.ProvisioningState
+import com.locus.core.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +26,10 @@ data class NewDeviceUiState(
 @HiltViewModel
 class NewDeviceViewModel
     @Inject
-    constructor() : ViewModel() {
+    constructor(
+        private val authRepository: AuthRepository,
+        application: Application,
+    ) : AndroidViewModel(application) {
         private val _uiState = MutableStateFlow(NewDeviceUiState())
         val uiState: StateFlow<NewDeviceUiState> = _uiState.asStateFlow()
 
@@ -36,7 +43,7 @@ class NewDeviceViewModel
                     isNameValid = isValid,
                     error =
                         if (!isValid && name.isNotEmpty()) {
-                            "Only lowercase letters, numbers, and hyphens allowed"
+                            getApplication<Application>().getString(R.string.onboarding_new_device_name_invalid)
                         } else {
                             null
                         },
@@ -56,16 +63,48 @@ class NewDeviceViewModel
 
                 // Basic mock logic: reject if "existing" is in the name for testing
                 if (name.contains("existing")) {
-                    _uiState.update { it.copy(isChecking = false, error = "Device name unavailable") }
+                    _uiState.update {
+                        it.copy(
+                            isChecking = false,
+                            error =
+                                getApplication<Application>()
+                                    .getString(R.string.onboarding_new_device_name_unavailable),
+                        )
+                    }
                 } else {
-                    _uiState.update { it.copy(isChecking = false, availabilityMessage = "Available!") }
+                    _uiState.update {
+                        it.copy(
+                            isChecking = false,
+                            availabilityMessage =
+                                getApplication<Application>()
+                                    .getString(R.string.onboarding_new_device_name_available),
+                        )
+                    }
                 }
             }
         }
 
         companion object {
             private const val SIMULATED_DELAY_MS = 500L
+            private const val SIM_STEP_DELAY_1 = 1000L
+            private const val SIM_STEP_DELAY_2 = 1500L
+            private const val SIM_STEP_DELAY_3 = 2000L
         }
 
-        // Future: deploy() function to trigger provisioning worker
+        fun deploy() {
+            // NOTE: Temporary simulation for UI verification. Task 10 will replace this with actual Service start.
+            viewModelScope.launch {
+                authRepository.setOnboardingStage(com.locus.core.domain.model.auth.OnboardingStage.PROVISIONING)
+                // Simulate Provisioning Steps
+                authRepository.updateProvisioningState(ProvisioningState.Working("Validating input..."))
+                delay(SIM_STEP_DELAY_1)
+                authRepository.updateProvisioningState(ProvisioningState.Working("Creating CloudFormation Stack..."))
+                delay(SIM_STEP_DELAY_2)
+                authRepository.updateProvisioningState(ProvisioningState.Working("Deploying resources..."))
+                delay(SIM_STEP_DELAY_3)
+                authRepository.updateProvisioningState(ProvisioningState.Working("Verifying outputs..."))
+                delay(SIM_STEP_DELAY_1)
+                authRepository.updateProvisioningState(ProvisioningState.Success)
+            }
+        }
     }

@@ -29,13 +29,40 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val authState by viewModel.authState.collectAsState()
+                    val onboardingStage by viewModel.onboardingStage.collectAsState()
 
-                    when (authState) {
-                        AuthState.Uninitialized, AuthState.SetupPending -> {
-                            OnboardingNavigation()
+                    val isComplete =
+                        onboardingStage ==
+                            com.locus.core.domain.model.auth.OnboardingStage.COMPLETE
+                    val isAuthenticated = authState == AuthState.Authenticated
+                    val isPermissionsPending =
+                        onboardingStage ==
+                            com.locus.core.domain.model.auth.OnboardingStage.PERMISSIONS_PENDING
+                    val isProvisioning =
+                        onboardingStage ==
+                            com.locus.core.domain.model.auth.OnboardingStage.PROVISIONING
+
+                    when {
+                        isProvisioning -> {
+                            OnboardingNavigation(
+                                startDestination =
+                                    com.locus.android.features.onboarding.OnboardingDestinations.PROVISIONING,
+                            )
                         }
-                        AuthState.Authenticated -> {
+                        isPermissionsPending -> {
+                            OnboardingNavigation(
+                                startDestination =
+                                    com.locus.android.features.onboarding.OnboardingDestinations.PERMISSIONS,
+                            )
+                        }
+                        isComplete && isAuthenticated -> {
                             DashboardScreen()
+                        }
+                        else -> {
+                            OnboardingNavigation(
+                                startDestination =
+                                    com.locus.android.features.onboarding.OnboardingDestinations.WELCOME,
+                            )
                         }
                     }
                 }
