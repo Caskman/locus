@@ -24,10 +24,20 @@ class ProvisioningStateTest {
     }
 
     @Test
-    fun `Failure state holds error`() {
+    fun `Failure state holds error and history`() {
+        val error = DomainException.NetworkError.Offline
+        val history = listOf("Step 1", "Step 2")
+        val state = ProvisioningState.Failure(error, history)
+        assertThat(state.error).isEqualTo(error)
+        assertThat(state.history).containsExactly("Step 1", "Step 2")
+    }
+
+    @Test
+    fun `Failure state has empty history by default`() {
         val error = DomainException.NetworkError.Offline
         val state = ProvisioningState.Failure(error)
         assertThat(state.error).isEqualTo(error)
+        assertThat(state.history).isEmpty()
     }
 
     @Test

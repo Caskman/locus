@@ -111,11 +111,16 @@ class AuthRepositoryImpl
 
         override suspend fun updateProvisioningState(state: ProvisioningState) {
             mutableProvisioningState.update { currentState ->
-                if (state is ProvisioningState.Working && currentState is ProvisioningState.Working) {
-                    val newHistory = (currentState.history + currentState.currentStep).takeLast(ProvisioningState.MAX_HISTORY_SIZE)
-                    state.copy(history = newHistory)
-                } else {
-                    state
+                when {
+                    state is ProvisioningState.Working && currentState is ProvisioningState.Working -> {
+                        val newHistory = (currentState.history + currentState.currentStep).takeLast(ProvisioningState.MAX_HISTORY_SIZE)
+                        state.copy(history = newHistory)
+                    }
+                    state is ProvisioningState.Failure && currentState is ProvisioningState.Working -> {
+                        val finalHistory = (currentState.history + currentState.currentStep).takeLast(ProvisioningState.MAX_HISTORY_SIZE)
+                        state.copy(history = finalHistory)
+                    }
+                    else -> state
                 }
             }
         }

@@ -134,23 +134,45 @@ fun ProvisioningLogList(
 
 @Composable
 fun ProvisioningFailure(state: ProvisioningState.Failure) {
-    Column {
-        Icon(
-            imageVector = Icons.Default.Close,
-            contentDescription = "Error",
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(48.dp),
-        )
-        Text(
-            text = stringResource(id = R.string.onboarding_provisioning_failed_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.error,
-        )
-        Text(
-            text = state.error.message ?: stringResource(id = R.string.onboarding_provisioning_unknown_error),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-        )
+    val listState = rememberLazyListState()
+    LaunchedEffect(state.history.size) {
+        listState.animateScrollToItem(state.history.size) // Scroll to end to show error
+    }
+
+    LazyColumn(
+        state = listState,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // 1. Show history items
+        items(state.history) { historyItem ->
+            LogItem(text = historyItem, isComplete = true)
+        }
+
+        // 2. Show Failure Message as the last item
+        item {
+            Column(
+                modifier = Modifier.padding(top = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Error",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(48.dp),
+                )
+                Text(
+                    text = stringResource(id = R.string.onboarding_provisioning_failed_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Text(
+                    text = state.error.message ?: stringResource(id = R.string.onboarding_provisioning_unknown_error),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
     }
 }
 
