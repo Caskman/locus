@@ -92,4 +92,9 @@ class FakeAuthRepository
             return storedRuntime?.let { LocusResult.Success(it) }
                 ?: LocusResult.Failure(Exception("No runtime credentials"))
         }
+
+        override suspend fun getRecoveryBuckets(): LocusResult<List<String>> {
+            // Return fake buckets for testing
+            return LocusResult.Success(listOf("locus-user-test-stack", "locus-user-backup-stack"))
+        }
     }

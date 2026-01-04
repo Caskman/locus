@@ -2,15 +2,22 @@ package com.locus.android.features.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.locus.core.domain.model.auth.ProvisioningState
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import androidx.work.workDataOf
+import com.locus.android.features.onboarding.work.ProvisioningWorker
 import com.locus.core.domain.repository.AuthRepository
+import com.locus.core.domain.result.LocusResult
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 data class RecoveryUiState(
@@ -24,6 +31,7 @@ class RecoveryViewModel
     @Inject
     constructor(
         private val authRepository: AuthRepository,
+        private val workManager: WorkManager,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(RecoveryUiState())
         val uiState: StateFlow<RecoveryUiState> = _uiState.asStateFlow()
@@ -32,36 +40,54 @@ class RecoveryViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, error = null) }
 
-                // Mocking bucket loading for UI development
-                // Real implementation will come in Task 10/11
-                delay(SIMULATED_DELAY_MS)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        buckets = listOf("locus-user-my-stack", "locus-user-test-stack"),
-                    )
+                when (val result = authRepository.getRecoveryBuckets()) {
+                    is LocusResult.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                buckets = result.data,
+                            )
+                        }
+                    }
+                    is LocusResult.Failure -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = result.error.message ?: "Failed to list buckets",
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        companion object {
-            private const val SIMULATED_DELAY_MS = 1000L
-            private const val SIM_STEP_DELAY_1 = 1000L
-            private const val SIM_STEP_DELAY_2 = 1500L
-            private const val SIM_STEP_DELAY_3 = 2000L
-        }
-
         fun recover(bucketName: String) {
-            // NOTE: Temporary simulation for UI verification. Task 10 will replace this with actual Service start.
             viewModelScope.launch {
+                // 1. Set Stage to PROVISIONING (Setup Trap)
                 authRepository.setOnboardingStage(com.locus.core.domain.model.auth.OnboardingStage.PROVISIONING)
-                authRepository.updateProvisioningState(ProvisioningState.Working("Connecting to bucket: $bucketName"))
-                delay(SIM_STEP_DELAY_1)
-                authRepository.updateProvisioningState(ProvisioningState.Working("Verifying stack tags..."))
-                delay(SIM_STEP_DELAY_2)
-                authRepository.updateProvisioningState(ProvisioningState.Working("Recovering identity..."))
-                delay(SIM_STEP_DELAY_3)
-                authRepository.updateProvisioningState(ProvisioningState.Success)
+
+                // 2. Enqueue Work
+                val inputData =
+                    workDataOf(
+                        ProvisioningWorker.KEY_MODE to ProvisioningWorker.MODE_RECOVER,
+                        ProvisioningWorker.KEY_BUCKET_NAME to bucketName,
+                    )
+
+                val workRequest =
+                    OneTimeWorkRequest.Builder(ProvisioningWorker::class.java)
+                        .setInputData(inputData)
+                        .setBackoffCriteria(
+                            BackoffPolicy.EXPONENTIAL,
+                            WorkRequest.MIN_BACKOFF_MILLIS,
+                            TimeUnit.MILLISECONDS,
+                        )
+                        .build()
+
+                workManager.enqueueUniqueWork(
+                    ProvisioningWorker.WORK_NAME,
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest,
+                )
             }
         }
     }

@@ -81,4 +81,9 @@ interface AuthRepository {
      * Retrieves the currently active Runtime Credentials.
      */
     suspend fun getRuntimeCredentials(): LocusResult<RuntimeCredentials>
+
+    /**
+     * Lists available recovery buckets using the stored Bootstrap Credentials.
+     */
+    suspend fun getRecoveryBuckets(): LocusResult<List<String>>
 }

@@ -1,10 +1,14 @@
 package com.locus.android.features.onboarding
 
+import androidx.work.WorkManager
 import com.google.common.truth.Truth.assertThat
 import com.locus.core.domain.repository.AuthRepository
+import com.locus.core.domain.result.LocusResult
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -22,12 +26,13 @@ import org.robolectric.annotation.Config
 class RecoveryViewModelTest {
     private lateinit var viewModel: RecoveryViewModel
     private val authRepository: AuthRepository = mockk(relaxed = true)
+    private val workManager: WorkManager = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = RecoveryViewModel(authRepository)
+        viewModel = RecoveryViewModel(authRepository, workManager)
     }
 
     @After
@@ -38,6 +43,13 @@ class RecoveryViewModelTest {
     @Test
     fun `loadBuckets updates state correctly`() =
         runTest {
+            coEvery { authRepository.getRecoveryBuckets() } coAnswers {
+                delay(1000)
+                LocusResult.Success(
+                    listOf("locus-user-1", "locus-user-2"),
+                )
+            }
+
             viewModel.loadBuckets()
 
             // Initially loading - run current tasks to let the launch block start

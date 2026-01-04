@@ -17,10 +17,12 @@ import com.locus.core.domain.result.DomainException.AuthError
 import com.locus.core.domain.result.DomainException.ProvisioningError
 import com.locus.core.domain.result.LocusResult
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -71,14 +73,24 @@ class AuthRepositoryImpl
         }
 
         private suspend fun loadInitialState() {
+            val runtimeResult = secureStorage.getRuntimeCredentials()
+            val hasRuntimeCreds = runtimeResult is LocusResult.Success && runtimeResult.data != null
+
             // Load Onboarding Stage
             val stageResult = secureStorage.getOnboardingStage()
-            if (stageResult is LocusResult.Success) {
-                mutableOnboardingStage.value = stageResult.data
+            when (stageResult) {
+                is LocusResult.Success -> {
+                    mutableOnboardingStage.value = stageResult.data
+                }
+                is LocusResult.Failure -> {
+                    if (hasRuntimeCreds) {
+                        Log.e(TAG, "Failed to read OnboardingStage but User is Authenticated. Enforcing Setup Trap.")
+                        mutableOnboardingStage.value = OnboardingStage.PERMISSIONS_PENDING
+                    }
+                }
             }
 
-            val runtimeResult = secureStorage.getRuntimeCredentials()
-            if (runtimeResult is LocusResult.Success && runtimeResult.data != null) {
+            if (hasRuntimeCreds) {
                 mutableAuthState.value = AuthState.Authenticated
                 return
             }
@@ -213,6 +225,29 @@ class AuthRepositoryImpl
                     LocusResult.Success(data)
                 }
                 is LocusResult.Failure -> result
+            }
+        }
+
+        override suspend fun getRecoveryBuckets(): LocusResult<List<String>> {
+            // 1. Get Bootstrap Credentials
+            val credsResult = getBootstrapCredentials()
+            if (credsResult is LocusResult.Failure) return LocusResult.Failure(credsResult.error)
+            val creds = (credsResult as LocusResult.Success).data
+
+            // 2. List Buckets
+            return try {
+                withContext(Dispatchers.IO) {
+                    awsClientFactory.createBootstrapS3Client(creds).use { s3 ->
+                        val response = s3.listBuckets()
+                        val bucketNames =
+                            response.buckets?.mapNotNull { it.name }?.filter {
+                                it.startsWith("locus-user-")
+                            } ?: emptyList()
+                        LocusResult.Success(bucketNames)
+                    }
+                }
+            } catch (e: Exception) {
+                LocusResult.Failure(AuthError.Generic(e))
             }
         }
 
