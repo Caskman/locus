@@ -1,7 +1,10 @@
 package com.locus.android.features.onboarding.permissions
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,12 +30,24 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionScreen(onPermissionsGranted: () -> Unit) {
+    val context = LocalContext.current
+
+    val openAppSettings = {
+        val intent =
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+        context.startActivity(intent)
+    }
+
     // Stage 1: Foreground
     val foregroundPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    var foregroundRequested by rememberSaveable { mutableStateOf(false) }
 
     // Stage 2: Background (Requires Foreground first)
     // Only available on Q+
@@ -45,9 +60,7 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
         }
 
     val backgroundPermissionState = rememberPermissionState(backgroundPermissionName)
-
-    val context = LocalContext.current
-    var showBackgroundRationale by remember { mutableStateOf(false) }
+    var backgroundRequested by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(foregroundPermissionState.status, backgroundPermissionState.status) {
         if (foregroundPermissionState.status.isGranted) {
@@ -77,6 +90,8 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
 
             if (!foregroundPermissionState.status.isGranted) {
                 // Foreground Request
+                val isPermanentlyDenied = foregroundRequested && !foregroundPermissionState.status.shouldShowRationale
+
                 Text(
                     text = "Locus needs 'While Using' location permission to record your tracks.",
                     style = MaterialTheme.typography.bodyLarge,
@@ -85,12 +100,28 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Button(onClick = { foregroundPermissionState.launchPermissionRequest() }) {
-                    Text("Grant Foreground Location")
+                if (isPermanentlyDenied) {
+                    Button(onClick = openAppSettings) {
+                        Text("Open Settings")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Permission permanently denied. Please enable it in Settings.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                } else {
+                    Button(onClick = {
+                        foregroundRequested = true
+                        foregroundPermissionState.launchPermissionRequest()
+                    }) {
+                        Text("Grant Foreground Location")
+                    }
                 }
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !backgroundPermissionState.status.isGranted) {
                 // Background Request (Android 10+)
-                // Android 11+ (R) requires user to go to settings if we request background
+                val isPermanentlyDenied = backgroundRequested && !backgroundPermissionState.status.shouldShowRationale
 
                 Text(
                     text = "To track you while the screen is off, Locus needs 'Allow all the time' location permission.",
@@ -109,8 +140,24 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Button(onClick = { backgroundPermissionState.launchPermissionRequest() }) {
-                    Text("Grant Background Location")
+                if (isPermanentlyDenied) {
+                    Button(onClick = openAppSettings) {
+                        Text("Open Settings")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Permission permanently denied. Please enable it in Settings.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                } else {
+                    Button(onClick = {
+                        backgroundRequested = true
+                        backgroundPermissionState.launchPermissionRequest()
+                    }) {
+                        Text("Grant Background Location")
+                    }
                 }
             } else {
                 Text("All permissions granted!")
