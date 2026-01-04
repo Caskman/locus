@@ -11,9 +11,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.locus.android.features.dashboard.DashboardScreen
+import com.locus.android.features.onboarding.OnboardingDestinations
 import com.locus.android.features.onboarding.OnboardingNavigation
 import com.locus.android.ui.theme.LocusTheme
 import com.locus.core.domain.model.auth.AuthState
+import com.locus.core.domain.model.auth.OnboardingStage
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -29,13 +31,31 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val authState by viewModel.authState.collectAsState()
+                    val onboardingStage by viewModel.onboardingStage.collectAsState()
 
-                    when (authState) {
-                        AuthState.Uninitialized, AuthState.SetupPending -> {
-                            OnboardingNavigation()
+                    val isComplete = onboardingStage == OnboardingStage.COMPLETE
+                    val isAuthenticated = authState == AuthState.Authenticated
+                    val isPermissionsPending = onboardingStage == OnboardingStage.PERMISSIONS_PENDING
+                    val isProvisioning = onboardingStage == OnboardingStage.PROVISIONING
+
+                    when {
+                        isProvisioning -> {
+                            OnboardingNavigation(
+                                startDestination = OnboardingDestinations.PROVISIONING,
+                            )
                         }
-                        AuthState.Authenticated -> {
+                        isPermissionsPending -> {
+                            OnboardingNavigation(
+                                startDestination = OnboardingDestinations.PERMISSIONS,
+                            )
+                        }
+                        isComplete && isAuthenticated -> {
                             DashboardScreen()
+                        }
+                        else -> {
+                            OnboardingNavigation(
+                                startDestination = OnboardingDestinations.WELCOME,
+                            )
                         }
                     }
                 }

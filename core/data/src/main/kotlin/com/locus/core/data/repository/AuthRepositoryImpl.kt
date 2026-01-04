@@ -9,6 +9,7 @@ import com.locus.core.data.source.remote.aws.AwsClientFactory
 import com.locus.core.data.util.await
 import com.locus.core.domain.model.auth.AuthState
 import com.locus.core.domain.model.auth.BootstrapCredentials
+import com.locus.core.domain.model.auth.OnboardingStage
 import com.locus.core.domain.model.auth.ProvisioningState
 import com.locus.core.domain.model.auth.RuntimeCredentials
 import com.locus.core.domain.repository.AuthRepository
@@ -19,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,6 +35,7 @@ class AuthRepositoryImpl
     ) : AuthRepository {
         private val mutableAuthState = MutableStateFlow<AuthState>(AuthState.Uninitialized)
         private val mutableProvisioningState = MutableStateFlow<ProvisioningState>(ProvisioningState.Idle)
+        private val mutableOnboardingStage = MutableStateFlow<OnboardingStage>(OnboardingStage.IDLE)
 
         override suspend fun initialize() {
             loadInitialState()
@@ -68,9 +71,22 @@ class AuthRepositoryImpl
         }
 
         private suspend fun loadInitialState() {
+            // Load Onboarding Stage
+            val stageResult = secureStorage.getOnboardingStage()
+            if (stageResult is LocusResult.Success) {
+                mutableOnboardingStage.value = stageResult.data
+            }
+
             val runtimeResult = secureStorage.getRuntimeCredentials()
             if (runtimeResult is LocusResult.Success && runtimeResult.data != null) {
                 mutableAuthState.value = AuthState.Authenticated
+
+                // Fail-Secure: If we are authenticated but failed to read the stage,
+                // default to PERMISSIONS_PENDING (safe trap) instead of IDLE.
+                // This ensures we verify permissions and don't dump the user to the Welcome screen.
+                if (stageResult is LocusResult.Failure) {
+                    mutableOnboardingStage.value = OnboardingStage.PERMISSIONS_PENDING
+                }
                 return
             }
 
@@ -85,10 +101,66 @@ class AuthRepositoryImpl
 
         override fun getAuthState(): Flow<AuthState> = mutableAuthState.asStateFlow()
 
+        override fun getOnboardingStage(): Flow<OnboardingStage> = mutableOnboardingStage.asStateFlow()
+
+        override suspend fun setOnboardingStage(stage: OnboardingStage) {
+            try {
+                val result = secureStorage.saveOnboardingStage(stage)
+                if (result is LocusResult.Success) {
+                    mutableOnboardingStage.value = stage
+                } else {
+                    Log.e(TAG, "Failed to persist onboarding stage: $stage")
+                    // Fail-open / optimistic update:
+                    // We still advance the in-memory onboarding stage so that the user can
+                    // continue through the flow even if persistence fails (e.g. due to an
+                    // intermittent storage or encryption error). This means the in-memory
+                    // value may temporarily diverge from what is stored on disk.
+                    //
+                    // Known edge cases:
+                    // - If the process dies before a subsequent successful save, the
+                    // persisted stage will still reflect the older value. On next app
+                    // start, loadInitialState() will restore from storage and the user
+                    // may see an earlier onboarding stage than the one they had reached
+                    // in-memory.
+                    // - If persistence keeps failing, we will only ever have the
+                    // in-memory progression; callers relying on durable storage must
+                    // account for this and handle retries or error reporting at a higher level.
+                    //
+                    // This tradeoff is intentional in favor of UX continuity. Revisit this
+                    // behavior if stronger guarantees about persisted onboarding progress
+                    // are required.
+                    mutableOnboardingStage.value = stage
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception saving onboarding stage", e)
+                // Fail-open behavior also applies when an unexpected exception occurs.
+                // We still advance the in-memory stage so the UI and user flow are not
+                // blocked on storage reliability. The same caveats as above apply:
+                // process death before a successful write will cause the stage derived
+                // from storage on next startup to lag behind what the user last saw.
+                mutableOnboardingStage.value = stage
+            }
+        }
+
         override fun getProvisioningState(): Flow<ProvisioningState> = mutableProvisioningState.asStateFlow()
 
         override suspend fun updateProvisioningState(state: ProvisioningState) {
-            mutableProvisioningState.value = state
+            mutableProvisioningState.update { currentState ->
+                when {
+                    state is ProvisioningState.Working && currentState is ProvisioningState.Working -> {
+                        val newHistory = (currentState.history + currentState.currentStep).takeLast(ProvisioningState.MAX_HISTORY_SIZE)
+                        state.copy(history = newHistory)
+                    }
+                    state is ProvisioningState.Failure && currentState is ProvisioningState.Working -> {
+                        // Capture the step that was running when we failed
+                        state.copy(
+                            failedStep = currentState.currentStep,
+                            history = currentState.history,
+                        )
+                    }
+                    else -> state
+                }
+            }
         }
 
         override suspend fun getBootstrapCredentials(): LocusResult<BootstrapCredentials> {
@@ -142,6 +214,9 @@ class AuthRepositoryImpl
 
             mutableAuthState.value = AuthState.Authenticated
             mutableProvisioningState.value = ProvisioningState.Success
+            // Note: We intentionally do not update OnboardingStage here.
+            // The caller or surrounding flow is responsible for setting it explicitly
+            // (for example to PERMISSIONS_PENDING after promotion, and later to COMPLETE).
             return LocusResult.Success(Unit)
         }
 

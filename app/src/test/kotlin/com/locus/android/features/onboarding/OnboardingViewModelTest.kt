@@ -119,6 +119,32 @@ class OnboardingViewModelTest {
             assertThat(viewModel.uiState.value.error).contains("Invalid credentials")
         }
 
+    @Test
+    fun `acknowledgeSuccess updates onboarding stage`() =
+        runTest {
+            viewModel.acknowledgeSuccess()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify {
+                authRepository.setOnboardingStage(
+                    com.locus.core.domain.model.auth.OnboardingStage.PERMISSIONS_PENDING,
+                )
+            }
+        }
+
+    @Test
+    fun `completeOnboarding updates onboarding stage`() =
+        runTest {
+            viewModel.completeOnboarding()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify {
+                authRepository.setOnboardingStage(
+                    com.locus.core.domain.model.auth.OnboardingStage.COMPLETE,
+                )
+            }
+        }
+
     companion object {
         private const val TEST_KEY = "key"
         private const val TEST_SECRET = "secret"

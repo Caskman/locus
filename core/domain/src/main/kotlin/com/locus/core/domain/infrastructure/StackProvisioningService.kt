@@ -40,7 +40,14 @@ class StackProvisioningService
             template: String,
             parameters: Map<String, String>,
         ): LocusResult<StackProvisioningResult> {
-            authRepository.updateProvisioningState(ProvisioningState.DeployingStack(stackName))
+            // NOTE: This service is intentionally responsible only for updating the current step
+            // message in the provisioning state. It does not manage or append the history list.
+            // Any preservation or merging of history must be handled by the caller (UseCase) and/or
+            // the AuthRepository implementation when this new state is persisted.
+
+            authRepository.updateProvisioningState(
+                ProvisioningState.Working("Deploying stack $stackName..."),
+            )
 
             // 1. Create Stack
             val createResult =
@@ -78,7 +85,7 @@ class StackProvisioningService
                     val details = describeResult.data
 
                     authRepository.updateProvisioningState(
-                        ProvisioningState.WaitingForCompletion(stackName, details.status),
+                        ProvisioningState.Working("Stack status: ${details.status}"),
                     )
 
                     if (details.status == STATUS_CREATE_COMPLETE) {
