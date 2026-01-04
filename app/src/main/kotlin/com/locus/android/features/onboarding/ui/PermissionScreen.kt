@@ -1,6 +1,7 @@
 package com.locus.android.features.onboarding.ui
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -97,6 +98,7 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
         context = context,
         foregroundLauncher = foregroundLauncher,
         backgroundLauncher = backgroundLauncher,
+        onLaunchError = { showRationale = true },
     )
 }
 
@@ -128,6 +130,7 @@ private fun PermissionContent(
     context: Context,
     foregroundLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>,
     backgroundLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    onLaunchError: () -> Unit,
 ) {
     Column(
         modifier =
@@ -146,7 +149,12 @@ private fun PermissionContent(
 
         when (currentStep) {
             PermissionStep.FOREGROUND -> ForegroundPermissionContent(foregroundLauncher)
-            PermissionStep.BACKGROUND -> BackgroundPermissionContent(context, backgroundLauncher)
+            PermissionStep.BACKGROUND ->
+                BackgroundPermissionContent(
+                    context,
+                    backgroundLauncher,
+                    onLaunchError,
+                )
             PermissionStep.COMPLETE -> { /* Navigate away via callback */ }
         }
 
@@ -219,6 +227,7 @@ fun ForegroundPermissionContent(launcher: ManagedActivityResultLauncher<Array<St
 fun BackgroundPermissionContent(
     context: Context,
     launcher: ManagedActivityResultLauncher<String, Boolean>,
+    onLaunchError: () -> Unit,
 ) {
     Text(
         text = stringResource(id = R.string.onboarding_permission_background_rationale),
@@ -236,11 +245,12 @@ fun BackgroundPermissionContent(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 try {
                     launcher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                } catch (
-                    @Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception,
-                ) {
-                    Log.e(TAG, "Failed to launch background permission request", e)
-                    openAppSettings(context)
+                } catch (e: ActivityNotFoundException) {
+                    Log.e(TAG, "Activity not found when launching background permission request", e)
+                    onLaunchError()
+                } catch (e: SecurityException) {
+                    Log.e(TAG, "Security exception when launching background permission request", e)
+                    onLaunchError()
                 }
             } else {
                 launcher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
