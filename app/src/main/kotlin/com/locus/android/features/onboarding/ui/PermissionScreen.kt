@@ -95,7 +95,6 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
     PermissionContent(
         currentStep = currentStep,
         showRationale = showRationale,
-        context = context,
         foregroundLauncher = foregroundLauncher,
         backgroundLauncher = backgroundLauncher,
         onLaunchError = { showRationale = true },
@@ -127,7 +126,6 @@ private fun rememberBackgroundLauncher(onResult: (Boolean) -> Unit) =
 private fun PermissionContent(
     currentStep: PermissionStep,
     showRationale: Boolean,
-    context: Context,
     foregroundLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>,
     backgroundLauncher: ManagedActivityResultLauncher<String, Boolean>,
     onLaunchError: () -> Unit,
@@ -151,7 +149,6 @@ private fun PermissionContent(
             PermissionStep.FOREGROUND -> ForegroundPermissionContent(foregroundLauncher)
             PermissionStep.BACKGROUND ->
                 BackgroundPermissionContent(
-                    context,
                     backgroundLauncher,
                     onLaunchError,
                 )
@@ -159,7 +156,7 @@ private fun PermissionContent(
         }
 
         if (showRationale) {
-            RationaleContent(context)
+            RationaleContent(LocalContext.current)
         }
     }
 }
@@ -225,7 +222,6 @@ fun ForegroundPermissionContent(launcher: ManagedActivityResultLauncher<Array<St
 
 @Composable
 fun BackgroundPermissionContent(
-    context: Context,
     launcher: ManagedActivityResultLauncher<String, Boolean>,
     onLaunchError: () -> Unit,
 ) {
