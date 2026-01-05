@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.locus.android.R
+import com.locus.android.util.NotificationConstants
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -41,8 +42,12 @@ class TrackerService : Service() {
             // Fallback safety for Android 14+ strict rules
             android.util.Log.e("TrackerService", "Failed to start foreground", e)
             stopSelf()
-        } catch (e: android.app.ForegroundServiceStartNotAllowedException) {
-            android.util.Log.e("TrackerService", "Foreground not allowed", e)
+        } catch (
+            @Suppress("TooGenericExceptionCaught") e: Exception,
+        ) {
+            // Catch strict mode exceptions (e.g. ForegroundServiceStartNotAllowedException on Android 12+)
+            // safely without causing VerifyErrors on older Android versions.
+            android.util.Log.e("TrackerService", "Foreground start failed", e)
             stopSelf()
         }
     }
@@ -63,7 +68,7 @@ class TrackerService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val channelId = "tracking_channel"
+        val channelId = NotificationConstants.CHANNEL_ID_TRACKING
         val channelName = getString(R.string.notification_channel_tracking_name)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
