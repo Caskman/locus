@@ -118,21 +118,10 @@ private fun rememberCheckPermissionsCallback(
             } else {
                 true
             }
-        val notifications =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ) == PackageManager.PERMISSION_GRANTED
-            } else {
-                true
-            }
-
         viewModel.updatePermissions(
             fine = fineLocation,
             coarse = coarseLocation,
             background = backgroundLocation,
-            notifications = notifications,
         )
     }
 }

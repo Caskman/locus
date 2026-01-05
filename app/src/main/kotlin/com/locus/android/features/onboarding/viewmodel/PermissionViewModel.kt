@@ -36,7 +36,6 @@ class PermissionViewModel
             fine: Boolean,
             coarse: Boolean,
             background: Boolean,
-            @Suppress("UnusedParameter") notifications: Boolean,
         ) {
             val newState =
                 when {
@@ -60,12 +59,8 @@ class PermissionViewModel
                 // was checked or the permission is permanently denied.
                 _uiState.value = PermissionUiState.DeniedForever
             } else {
-                // If we should show rationale, we reset to Pending so the UI can show
-                // the prompt/rationale again.
-                // (Or we could have a specific 'Rationale' state, but ForegroundPending
-                // with text is usually sufficient)
-                // For now, staying in Pending allows the user to try again.
-                // But we might want to track that a denial happened.
+                // State remains unchanged so the UI can show the rationale and the
+                // user can retry the permission request.
             }
         }
 

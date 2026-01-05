@@ -18,6 +18,8 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppServiceModule {
+    // 15 minutes is the minimum allowed interval for periodic work in WorkManager.
+    // Do not reduce this value below 15, or WorkManager will reject the request.
     private const val WATCHDOG_INTERVAL_MINUTES = 15L
 
     @Provides
