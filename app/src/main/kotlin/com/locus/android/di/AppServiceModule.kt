@@ -1,13 +1,18 @@
 package com.locus.android.di
 
 import android.content.Context
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.locus.android.services.TrackerService
+import com.locus.android.workers.WatchdogWorker
 import com.locus.core.domain.usecase.TrackingManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -20,6 +25,16 @@ object AppServiceModule {
         return object : TrackingManager {
             override fun startTracking() {
                 TrackerService.start(context)
+
+                // Schedule Watchdog (approx every 15 mins)
+                val request = PeriodicWorkRequestBuilder<WatchdogWorker>(15, TimeUnit.MINUTES)
+                    .build()
+
+                WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                    "WatchdogWorker",
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    request
+                )
             }
         }
     }
