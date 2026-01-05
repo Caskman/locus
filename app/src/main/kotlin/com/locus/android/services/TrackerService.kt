@@ -60,7 +60,7 @@ class TrackerService : Service() {
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("Locus Tracking")
             .setContentText("Tracking active")
-            .setSmallIcon(R.mipmap.ic_launcher) // Ensure this resource exists or use a default android one
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
