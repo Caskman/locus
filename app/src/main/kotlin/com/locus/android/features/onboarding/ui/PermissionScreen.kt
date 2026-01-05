@@ -324,10 +324,10 @@ fun BackgroundPermissionContent(
                 try {
                     launcher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 } catch (e: ActivityNotFoundException) {
-                    Log.e(TAG, "Activity not found", e)
+                    Log.e(TAG, "Activity not found when launching background permission request", e)
                     onLaunchError()
                 } catch (e: SecurityException) {
-                    Log.e(TAG, "Security exception", e)
+                    Log.e(TAG, "Security exception when launching background permission request", e)
                     onLaunchError()
                 }
             } else {

@@ -45,5 +45,5 @@
     <!-- Permission Screen -->
     <string name="onboarding_permission_granted_all">All required permissions granted!</string>
     <string name="onboarding_permission_go_dashboard">Go to Dashboard</string>
-    <string name="onboarding_permission_coarse_error">Precise location is required for this app to work correctly. Please grant \'Precise\' location.</string>
+    <string name="onboarding_permission_coarse_error">Precise location is required for this app to work correctly. Please grant \"Precise\" location.</string>
 </resources>
