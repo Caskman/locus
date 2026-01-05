@@ -10,14 +10,17 @@ import javax.inject.Inject
 
 interface TrackingManager {
     fun startTracking()
+
     fun scheduleWatchdog()
 }
 
-class StartTrackingUseCase @Inject constructor(
-    private val trackingManager: TrackingManager
-) {
-    operator fun invoke() {
-        trackingManager.startTracking()
-        trackingManager.scheduleWatchdog()
+class StartTrackingUseCase
+    @Inject
+    constructor(
+        private val trackingManager: TrackingManager,
+    ) {
+        operator fun invoke() {
+            trackingManager.startTracking()
+            trackingManager.scheduleWatchdog()
+        }
     }
-}

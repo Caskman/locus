@@ -14,39 +14,49 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class TrackerService : Service() {
-
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         if (!hasRequiredPermissions()) {
             stopSelf()
             return START_NOT_STICKY
         }
 
-        try {
-            // Enforce foreground immediately to avoid Android 12+ / 14+ crashes
-            startForeground(NOTIFICATION_ID, createNotification())
-        } catch (e: Exception) {
-            // Fallback safety for Android 14+ strict rules
-            stopSelf()
-            return START_NOT_STICKY
-        }
+        startForegroundSafely()
 
         return START_STICKY
     }
 
+    private fun startForegroundSafely() {
+        try {
+            // Enforce foreground immediately to avoid Android 12+ / 14+ crashes
+            startForeground(NOTIFICATION_ID, createNotification())
+        } catch (e: SecurityException) {
+            // Fallback safety for Android 14+ strict rules
+            android.util.Log.e("TrackerService", "Failed to start foreground", e)
+            stopSelf()
+        } catch (e: android.app.ForegroundServiceStartNotAllowedException) {
+            android.util.Log.e("TrackerService", "Foreground not allowed", e)
+            stopSelf()
+        }
+    }
+
     private fun hasRequiredPermissions(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-             androidx.core.content.ContextCompat.checkSelfPermission(
-                 this,
-                 android.Manifest.permission.ACCESS_FINE_LOCATION
-             ) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
-             androidx.core.content.ContextCompat.checkSelfPermission(
-                 this,
-                 android.Manifest.permission.ACCESS_COARSE_LOCATION
-             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         } else {
             true // Prior to Android 14, system might be more lenient, or we assume verified by UI
         }
@@ -59,11 +69,12 @@ class TrackerService : Service() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                channelName,
-                NotificationManager.IMPORTANCE_LOW
-            )
+            val channel =
+                NotificationChannel(
+                    channelId,
+                    channelName,
+                    NotificationManager.IMPORTANCE_LOW,
+                )
             notificationManager.createNotificationChannel(channel)
         }
 

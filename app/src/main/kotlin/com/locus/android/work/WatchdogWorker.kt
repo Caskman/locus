@@ -8,13 +8,14 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
 @HiltWorker
-class WatchdogWorker @AssistedInject constructor(
-    @Assisted appContext: Context,
-    @Assisted workerParams: WorkerParameters
-) : CoroutineWorker(appContext, workerParams) {
-
-    override suspend fun doWork(): Result {
-        // Stub implementation for Phase 1
-        return Result.success()
+class WatchdogWorker
+    @AssistedInject
+    constructor(
+        @Assisted appContext: Context,
+        @Assisted workerParams: WorkerParameters,
+    ) : CoroutineWorker(appContext, workerParams) {
+        override suspend fun doWork(): Result {
+            // Stub implementation for Phase 1
+            return Result.success()
+        }
     }
-}
