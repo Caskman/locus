@@ -39,7 +39,7 @@ class TrackerService : Service() {
 
     private fun createNotification(): Notification {
         val channelId = "tracking_channel"
-        val channelName = "Tracking Service"
+        val channelName = getString(R.string.notification_channel_tracking_name)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
