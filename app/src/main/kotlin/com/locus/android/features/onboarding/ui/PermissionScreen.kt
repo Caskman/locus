@@ -1,12 +1,14 @@
 package com.locus.android.features.onboarding.ui
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,11 +40,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.locus.android.R
 
+private const val TAG = "PermissionScreen"
+
 @Composable
 fun PermissionScreen(onPermissionsGranted: () -> Unit) {
     val context = LocalContext.current
     var currentStep by remember { mutableStateOf(PermissionStep.FOREGROUND) }
-    var showRational by remember { mutableStateOf(false) }
+    var showRationale by remember { mutableStateOf(false) }
 
     fun checkPermissions() {
         val step = determinePermissionStep(context)
@@ -64,7 +68,7 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
                 if (!granted) {
                     val shouldShowRationale =
                         activity?.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) == true
-                    showRational = !shouldShowRationale
+                    showRationale = !shouldShowRationale
                 }
                 checkPermissions()
             },
@@ -82,7 +86,7 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
                         } else {
                             false
                         }
-                    showRational = !shouldShowRationale
+                    showRationale = !shouldShowRationale
                 }
                 checkPermissions()
             },
@@ -90,10 +94,10 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
 
     PermissionContent(
         currentStep = currentStep,
-        showRational = showRational,
-        context = context,
+        showRationale = showRationale,
         foregroundLauncher = foregroundLauncher,
         backgroundLauncher = backgroundLauncher,
+        onLaunchError = { showRationale = true },
     )
 }
 
@@ -121,10 +125,10 @@ private fun rememberBackgroundLauncher(onResult: (Boolean) -> Unit) =
 @Composable
 private fun PermissionContent(
     currentStep: PermissionStep,
-    showRational: Boolean,
-    context: Context,
+    showRationale: Boolean,
     foregroundLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>,
     backgroundLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    onLaunchError: () -> Unit,
 ) {
     Column(
         modifier =
@@ -143,12 +147,16 @@ private fun PermissionContent(
 
         when (currentStep) {
             PermissionStep.FOREGROUND -> ForegroundPermissionContent(foregroundLauncher)
-            PermissionStep.BACKGROUND -> BackgroundPermissionContent(context, backgroundLauncher)
+            PermissionStep.BACKGROUND ->
+                BackgroundPermissionContent(
+                    backgroundLauncher,
+                    onLaunchError,
+                )
             PermissionStep.COMPLETE -> { /* Navigate away via callback */ }
         }
 
-        if (showRational) {
-            RationaleContent(context)
+        if (showRationale) {
+            RationaleContent(LocalContext.current)
         }
     }
 }
@@ -214,8 +222,8 @@ fun ForegroundPermissionContent(launcher: ManagedActivityResultLauncher<Array<St
 
 @Composable
 fun BackgroundPermissionContent(
-    context: Context,
     launcher: ManagedActivityResultLauncher<String, Boolean>,
+    onLaunchError: () -> Unit,
 ) {
     Text(
         text = stringResource(id = R.string.onboarding_permission_background_rationale),
@@ -233,10 +241,12 @@ fun BackgroundPermissionContent(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 try {
                     launcher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                } catch (
-                    @Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception,
-                ) {
-                    openAppSettings(context)
+                } catch (e: ActivityNotFoundException) {
+                    Log.e(TAG, "Activity not found when launching background permission request", e)
+                    onLaunchError()
+                } catch (e: SecurityException) {
+                    Log.e(TAG, "Security exception when launching background permission request", e)
+                    onLaunchError()
                 }
             } else {
                 launcher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
