@@ -10,6 +10,7 @@ import javax.inject.Inject
 
 interface TrackingManager {
     fun startTracking()
+    fun scheduleWatchdog()
 }
 
 class StartTrackingUseCase @Inject constructor(
@@ -17,5 +18,6 @@ class StartTrackingUseCase @Inject constructor(
 ) {
     operator fun invoke() {
         trackingManager.startTracking()
+        trackingManager.scheduleWatchdog()
     }
 }

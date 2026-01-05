@@ -20,15 +20,41 @@ class TrackerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Enforce foreground immediately to avoid Android 12+ / 14+ crashes
-        startForeground(NOTIFICATION_ID, createNotification())
+        if (!hasRequiredPermissions()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        try {
+            // Enforce foreground immediately to avoid Android 12+ / 14+ crashes
+            startForeground(NOTIFICATION_ID, createNotification())
+        } catch (e: Exception) {
+            // Fallback safety for Android 14+ strict rules
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
         return START_STICKY
     }
 
+    private fun hasRequiredPermissions(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+             androidx.core.content.ContextCompat.checkSelfPermission(
+                 this,
+                 android.Manifest.permission.ACCESS_FINE_LOCATION
+             ) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
+             androidx.core.content.ContextCompat.checkSelfPermission(
+                 this,
+                 android.Manifest.permission.ACCESS_COARSE_LOCATION
+             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Prior to Android 14, system might be more lenient, or we assume verified by UI
+        }
+    }
+
     private fun createNotification(): Notification {
         val channelId = "tracking_channel"
-        val channelName = "Tracking Service"
+        val channelName = getString(R.string.notification_channel_tracking_name)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -42,8 +68,8 @@ class TrackerService : Service() {
         }
 
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Locus Tracking")
-            .setContentText("Tracking active")
+            .setContentTitle(getString(R.string.notification_tracking_title))
+            .setContentText(getString(R.string.notification_tracking_text))
             .setSmallIcon(R.mipmap.ic_launcher) // Ensure this resource exists or use a default android one
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
