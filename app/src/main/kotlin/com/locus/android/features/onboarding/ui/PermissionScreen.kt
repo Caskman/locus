@@ -135,21 +135,10 @@ private fun checkPermissions(
         } else {
             true
         }
-    val notifications =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-
     viewModel.updatePermissions(
         fine = fineLocation,
         coarse = coarseLocation,
         background = backgroundLocation,
-        notifications = notifications,
     )
 }
 
@@ -193,7 +182,7 @@ private fun PermissionScreenContent(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(onClick = onPermissionsGranted) {
-                    Text("Go to Dashboard")
+                    Text(stringResource(id = R.string.onboarding_permission_go_to_dashboard))
                 }
             }
             PermissionUiState.DeniedForever -> {
