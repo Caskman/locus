@@ -36,7 +36,6 @@ class PermissionViewModel
             fine: Boolean,
             coarse: Boolean,
             background: Boolean,
-            @Suppress("UnusedParameter") notifications: Boolean,
         ) {
             val newState =
                 when {

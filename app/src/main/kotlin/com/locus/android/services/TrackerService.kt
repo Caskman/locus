@@ -56,7 +56,7 @@ class TrackerService : Service() {
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle(getString(R.string.tracker_notification_title))
             .setContentText(getString(R.string.tracker_notification_content))
-            .setSmallIcon(R.mipmap.ic_launcher) // Ensure this resource exists or use a default android one
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }

@@ -87,14 +87,7 @@ private fun CheckPermissionsEffect(
             } else {
                 true
             }
-        val notif =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                true
-            }
-
-        viewModel.updatePermissions(fine, coarse, bg, notif)
+        viewModel.updatePermissions(fine, coarse, bg)
     }
 
     LaunchedEffect(Unit) { checkPermissions() }
@@ -128,13 +121,7 @@ private fun rememberForegroundLauncher(
             } else {
                 true
             }
-        val notif =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                true
-            }
-        viewModel.updatePermissions(fine, coarse, bg, notif)
+        viewModel.updatePermissions(fine, coarse, bg)
     },
 )
 
@@ -169,13 +156,7 @@ private fun rememberBackgroundLauncher(
         // Re-query all permissions
         val fine = hasPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = hasPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
-        val notif =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                true
-            }
-        viewModel.updatePermissions(fine, coarse, bg, notif)
+        viewModel.updatePermissions(fine, coarse, bg)
     },
 )
 

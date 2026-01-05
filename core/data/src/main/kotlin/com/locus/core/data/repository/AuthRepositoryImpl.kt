@@ -89,8 +89,10 @@ class AuthRepositoryImpl
                 } else if (stageResult is LocusResult.Success) {
                     // Self-Healing: If we are authenticated, we must have passed provisioning.
                     // If the stage is not COMPLETE, we should trap the user in the permissions flow
-                    // to ensure they finish setup. This catches cases where the user
-                    // force-quit during permissions or if state was partially lost.
+                    // to ensure they finish setup. This corrects inconsistent states such as:
+                    // - AuthState.Authenticated while OnboardingStage is still IDLE or PERMISSIONS_PENDING
+                    // - user force-quitting during the permissions flow before the stage was updated to COMPLETE
+                    // - onboarding stage being partially lost/corrupted (e.g., after storage issues or app restore)
                     if (stageResult.data != OnboardingStage.COMPLETE) {
                         mutableOnboardingStage.value = OnboardingStage.PERMISSIONS_PENDING
                     }

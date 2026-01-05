@@ -40,10 +40,8 @@ class PermissionViewModelTest {
             val fine = false
             val coarse = true
             val background = false
-            val notifications = true
-
             // When
-            viewModel.updatePermissions(fine, coarse, background, notifications)
+            viewModel.updatePermissions(fine, coarse, background)
 
             // Then
             assertThat(viewModel.uiState.value).isEqualTo(PermissionUiState.CoarseLocationError)
@@ -56,10 +54,9 @@ class PermissionViewModelTest {
             val fine = false
             val coarse = false
             val background = false
-            val notifications = false
 
             // When
-            viewModel.updatePermissions(fine, coarse, background, notifications)
+            viewModel.updatePermissions(fine, coarse, background)
 
             // Then
             assertThat(viewModel.uiState.value).isEqualTo(PermissionUiState.ForegroundPending)
@@ -72,10 +69,9 @@ class PermissionViewModelTest {
             val fine = true
             val coarse = true
             val background = false
-            val notifications = true
 
             // When
-            viewModel.updatePermissions(fine, coarse, background, notifications)
+            viewModel.updatePermissions(fine, coarse, background)
 
             // Then
             assertThat(viewModel.uiState.value).isEqualTo(PermissionUiState.BackgroundPending)
@@ -88,26 +84,24 @@ class PermissionViewModelTest {
             val fine = true
             val coarse = true
             val background = true
-            val notifications = true
 
             // When
-            viewModel.updatePermissions(fine, coarse, background, notifications)
+            viewModel.updatePermissions(fine, coarse, background)
 
             // Then
             assertThat(viewModel.uiState.value).isEqualTo(PermissionUiState.Granted)
         }
 
     @Test
-    fun `shows background pending even if notifications denied`() =
+    fun `shows background pending regardless of notifications`() =
         runTest {
             // Given
             val fine = true
             val coarse = true
             val background = false
-            val notifications = false // Denied
 
             // When
-            viewModel.updatePermissions(fine, coarse, background, notifications)
+            viewModel.updatePermissions(fine, coarse, background)
 
             // Then
             assertThat(viewModel.uiState.value).isEqualTo(PermissionUiState.BackgroundPending)
