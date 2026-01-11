@@ -2,58 +2,55 @@
 
 **Analysis Date:** 2024-05-21
 **Source Document:** `agents/ephemeral/phase1-onboarding/11-admin-upgrade-plan.md`
-**Scope:** Identify gaps or problems in the context of "No Legacy Users / No Existing Install Base".
+**Scope:** Identify gaps or problems in the context of "No Legacy Users / No Existing Install Base", incorporating user feedback regarding Recovery intent.
 
 ## Findings
 
 ### 1. Critical Flaw: Data Deletion Risk in Upgrade Flow
 **Severity:** Critical
-**Description:** The plan instructs the `UpgradeAccountUseCase` to pass the existing bucket name as a parameter (`BucketName=creds.bucketName`) during the CloudFormation `UpdateStack` operation for an Admin upgrade.
+**Description:** The CloudFormation template logic for preserving the bucket relies on the `BucketName` parameter being **empty** for the Stack that owns the bucket resource ("Owner").
+- If `BucketName` is empty, `CreateNewBucket` is True, and the `LocusDataBucket` resource is active.
+- If `BucketName` is provided (e.g. "my-bucket"), `CreateNewBucket` is False, and the `LocusDataBucket` resource is **removed** from the stack definition.
 **Technical Impact:**
-- The proposed CloudFormation template modification includes a condition `CreateNewBucket` which is `True` only if the `BucketName` parameter is empty.
-- The `LocusDataBucket` resource is conditioned on `CreateNewBucket`.
-- For the "Owner" stack (Standard User), the bucket was created with an empty `BucketName` parameter.
-- If the `BucketName` parameter is changed to a non-empty value during an update, CloudFormation will evaluate `CreateNewBucket` as `False`, remove the `LocusDataBucket` resource from the stack definition, and attempt to **DELETE** the bucket.
-- While S3 safety checks prevents deleting non-empty buckets, this will cause the Upgrade operation to fail with a Rollback, breaking the feature.
+- Regardless of whether the user is an "Owner" (Standard) or a "Takeover" (Recovered), if the `UpgradeAccountUseCase` inadvertently passes the existing bucket name to the `BucketName` parameter during an `UpdateStack` operation, CloudFormation will attempt to **DELETE** the bucket.
+- This is a counter-intuitive behavior where providing the bucket name causes it to be lost from the stack's management.
 **Resolution:**
-- The `RuntimeCredentials` model must store an `isBucketOwner: Boolean` flag.
-- The `UpgradeAccountUseCase` must conditionally set the `BucketName` parameter:
-    - If `isBucketOwner == true`: Pass `BucketName=""` (Empty String) to retain ownership.
-    - If `isBucketOwner == false`: Pass `BucketName=creds.bucketName` (Link Mode).
+- The `UpgradeAccountUseCase` must explicitly pass `BucketName=""` (Empty String) when performing an upgrade on a stack that owns the bucket resource.
+- This ensures the `LocusDataBucket` resource remains part of the stack definition.
 
-### 2. Critical Logic Flaw: Stack Name Persistence in Recovery
-**Severity:** High
-**Description:** The plan states: *"Recovered Users: ... persist it [StackName] on the S3 bucket itself ... so it can be recovered during the scan process ... RecoverAccountUseCase must use this value."*
+### 2. Strategic Divergence: Linker (Current) vs. Takeover (User Intent)
+**Severity:** Critical
+**Description:**
+- **Current Architecture:** The codebase (`RecoverAccountUseCase.kt`) currently implements a **"Linker"** strategy. It creates a *new* CloudFormation stack (`locus-user-UUID`) that links to the existing bucket. This new stack does *not* own the `LocusDataBucket` resource, meaning it cannot modify bucket-level properties (like adding tags or changing policies) required for the Admin Upgrade.
+- **User Intent:** The user has clarified that "Recovery should assume an existing stack" and that they want to "assert which bucket/stack is theirs". This implies a **"Takeover"** strategy where the app reclaims ownership of the *original* stack (`locus-user-OldDevice`).
 **Technical Impact:**
-- This instruction conflicts with the project memory rule: *"System Recovery ... mandates a new unique Device ID for every install"*.
-- If the "Unique Device ID" rule is followed, the Recovery process creates a **NEW** stack (e.g., `locus-user-DeviceB`) which links to the existing bucket (`BucketA`).
-- The `LocusStackName` tag on `BucketA` contains the name of the *original* stack (`locus-user-DeviceA`).
-- If `RecoverAccountUseCase` uses the value from the tag (`locus-user-DeviceA`) to populate `RuntimeCredentials.stackName`, the new device will hold a reference to the **wrong stack**.
-- Any subsequent attempt to "Upgrade" will fail because the device does not hold credentials to update `locus-user-DeviceA`, and it will not be targeting its own stack (`locus-user-DeviceB`).
+- If we proceed with the current "Linker" implementation, the Admin Upgrade will fail for recovered users because their stack lacks the `LocusDataBucket` resource to apply the required changes.
+- To fulfill the user's intent, the Recovery logic must be fundamentally changed from `CreateStack` (New) to `UpdateStack` (Existing).
 **Resolution:**
-- Reaffirm the "Unique Device ID / New Stack" strategy for recovery.
-- `RecoverAccountUseCase` must populate `RuntimeCredentials.stackName` with the **newly created stack name**, ignoring the tag on the bucket (except for potential audit logging).
-- The `LocusStackName` tag on the bucket serves as an immutable record of the *creating* stack (Owner), which is correct behavior.
+- **Pivot to Takeover Strategy:** Modify `RecoverAccountUseCase` to perform an `UpdateStack` operation on the existing stack name (discovered via the `aws:cloudformation:stack-name` tag on the bucket).
+- **Key Rotation Requirement:** Since `UpdateStack` does not automatically rotate IAM Access Keys if the user resource is unchanged, we must force key rotation to invalidate the lost credentials.
+    - **Mechanism:** Add a `KeySerial` or `UserSuffix` parameter to `locus-stack.yaml` (e.g., `UserName: !Sub "locus-user-${StackName}-${KeySerial}"`).
+    - **Logic:** During recovery, generate a new UUID for `KeySerial` and pass it to `UpdateStack`. This forces CloudFormation to create a new `AWS::IAM::User` and `AWS::IAM::AccessKey`, effectively rotating credentials and ensuring the recovered user has exclusive access.
 
-### 3. Missing Data Field: `isBucketOwner`
-**Severity:** High
-**Description:** As a consequence of Finding #1, the current `RuntimeCredentials` schema is insufficient to support the "Upgrade" logic safely because it cannot distinguish between an Owner (Standard) and a Linker (Recovered).
-**Resolution:**
-- Add `val isBucketOwner: Boolean` to `RuntimeCredentials`.
-- Set to `true` in `ProvisioningUseCase` (Standard).
-- Set to `false` in `RecoverAccountUseCase` (Recovery).
-- Persist this value in `SecureStorage`.
-
-### 4. Confirmed Fix: Infrastructure Constants Mismatch
+### 3. Confirmed Fix: Infrastructure Constants Mismatch
 **Severity:** Validated
 **Description:** The plan correctly identifies that `InfrastructureConstants.OUT_RUNTIME_ACCESS_KEY` (`RuntimeAccessKeyId`) mismatches the CloudFormation Output (`AccessKeyId`).
 **Resolution:** The proposed fix in the plan is correct.
 
 ## Recommendations
 
-1.  **Modify Plan Step 4:** Add `isBucketOwner` to `RuntimeCredentials`.
-2.  **Modify Plan Step 8 & 9:**
-    - `ProvisioningUseCase`: Set `isBucketOwner = true`.
-    - `RecoverAccountUseCase`: Set `isBucketOwner = false`. Do **NOT** use the bucket tag for `stackName`; use the new stack name.
-    - `UpgradeAccountUseCase`: Implement logic: `val bucketParam = if (creds.isBucketOwner) "" else creds.bucketName`.
-3.  **Clarify Recovery Strategy:** Explicitly state that Recovery creates a new stack and links to the bucket, rather than reusing the old stack.
+1.  **Adopt Takeover Strategy for Recovery:**
+    - Update `RecoverAccountUseCase` to:
+        1. Scan for the `aws:cloudformation:stack-name` tag on the target bucket.
+        2. Execute `stackProvisioningService.updateAndPollStack` targeting that stack name.
+        3. Pass `BucketName=""` (to preserve bucket ownership/resource).
+        4. Pass a new `KeySerial` (to force credential rotation).
+2.  **Modify CloudFormation Template:**
+    - Update `locus-stack.yaml` to include a `KeySerial` parameter (Default: "1") and append it to the `UserName` property.
+    - This enables the safe "Takeover" of stacks.
+3.  **Ensure Safe Upgrade Logic:**
+    - `UpgradeAccountUseCase` must also pass `BucketName=""` to avoid the deletion trap identified in Finding #1.
+    - `RuntimeCredentials` should include `stackName` (as planned) to facilitate future upgrades.
+
+## Conclusion
+By pivoting to the "Takeover" strategy, we align the architecture with the user's mental model ("I own this stack") and simplify the permissions model (everyone is an Owner/Admin candidate), while solving the critical issue of credential rotation on recovery.
