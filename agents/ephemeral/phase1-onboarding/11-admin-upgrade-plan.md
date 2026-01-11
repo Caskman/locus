@@ -7,6 +7,7 @@ Analysis has identified critical requirements to support this flow:
 - **In-Place Update:** The upgrade must perform a CloudFormation `UpdateStack` operation on the existing `locus-user-<deviceName>` stack.
 - **Persistence:** The authoritative CloudFormation `StackName` must be persisted in `RuntimeCredentials` to allow robust targeting for updates.
     - **All Users:** Since there is no existing installed user base, we can mandate that `stackName` is persisted immediately upon provisioning for all users.
+    - **Recovered Users:** Since the app doesn't know the stack name after a reinstall, we must persist it on the S3 bucket itself via Tags (`LocusStackName`) so it can be recovered during the scan process.
 - **Discovery:** Admin users require `tag:GetResources` permission to discover other device buckets.
 
 ## 1. Documentation Updates
@@ -22,17 +23,31 @@ Analysis has identified critical requirements to support this flow:
 
 2.  **Modify CloudFormation Template**
     - **File:** `core/data/src/main/assets/locus-stack.yaml`
-    - **Action:** Modify the existing template to support Admin capabilities via parameters.
+    - **Action:** Modify the existing template to support Admin capabilities via parameters and enable recovery.
     - **Details:**
+        - **Recovery Tag:** Add a Tag to `LocusDataBucket` -> Key: `LocusStackName`, Value: `!Ref "AWS::StackName"`. This is critical for `RecoverAccountUseCase`.
         - Add Parameter: `IsAdmin` (Type: String, Default: "false", AllowedValues: ["true", "false"]).
         - Add Condition: `AdminEnabled` equals `true`.
         - Modify `LocusPolicy`:
             - Use `Fn::If` in the `Statement` list to conditionally include the Admin permissions block.
-            - **Important:** If `AdminEnabled` is false, use `Ref: AWS::NoValue` to remove the block entirely. This ensures the Logical ID of the Policy resource remains stable, preventing replacement.
+            - **Syntax:**
+              ```yaml
+              Statement:
+                - Effect: Allow
+                  Action: ... (Standard Permissions)
+                - !If
+                  - AdminEnabled
+                  - Effect: Allow
+                    Action:
+                      - s3:ListBucket
+                      - tag:GetResources
+                    Resource: ...
+                  - !Ref "AWS::NoValue"
+              ```
             - Admin permissions:
                 - `s3:ListBucket` on resources tagged with `LocusRole: DeviceBucket`.
                 - `tag:GetResources` (Resource Groups Tagging API).
-    - **Goal:** Guarantees `LocusDataBucket` Logical ID remains identical, preserving user data, while enabling Admin discovery.
+    - **Goal:** Guarantees `LocusDataBucket` Logical ID remains identical, preserving user data, while enabling Admin discovery and future recovery.
     - **Verification:** Run `cfn-lint core/data/src/main/assets/locus-stack.yaml` immediately to verify the conditional syntax is valid.
 
 3.  **Update Runtime Credentials Schema**
@@ -47,7 +62,9 @@ Analysis has identified critical requirements to support this flow:
     - **File:** `core/data/src/main/kotlin/com/locus/core/data/infrastructure/CloudFormationClientImpl.kt`
     - **Action:** Add `updateStack` method.
     - **Signature:** `suspend fun updateStack(stackName: String, templateBody: String, parameters: Map<String, String>)`
-    - **Logic:** Must handle "No updates are to be performed" (ValidationError) as a successful state.
+    - **Details:**
+        - Must include `capabilities = listOf(Capability.CapabilityNamedIam)` in the request.
+        - Must handle "No updates are to be performed" (ValidationError) as a successful state.
     - **Verification:** Read `core/data/src/main/kotlin/com/locus/core/data/infrastructure/CloudFormationClientImpl.kt` to confirm the `updateStack` method was added correctly.
 
 5.  **Verify Resource Provider**
@@ -67,8 +84,10 @@ Analysis has identified critical requirements to support this flow:
 7.  **Update Provisioning Use Cases**
     - **File:** `core/domain/src/main/kotlin/com/locus/core/domain/usecase/ProvisioningUseCase.kt`
     - **File:** `core/domain/src/main/kotlin/com/locus/core/domain/usecase/RecoverAccountUseCase.kt`
-    - **Action:** Update the logic to extract `StackName` from the CloudFormation outputs (or inputs) and include it when constructing the `RuntimeCredentials` object.
-    - **Goal:** Ensure all users persist the Stack Name immediately.
+    - **Action:** Update logic to ensure `StackName` is always populated in `RuntimeCredentials`.
+        - **Provisioning:** Extract `StackName` from the CloudFormation inputs/outputs.
+        - **Recovery:** Update `ScanBucketsUseCase` to read the `LocusStackName` tag from the discovered bucket. `RecoverAccountUseCase` must use this value.
+    - **Goal:** Ensure all users persist the Stack Name immediately to enable future upgrades.
     - **Verification:** Verify that `ConfigurationRepository.initializeIdentity` or `AuthRepository` receives the `stackName`.
 
 8.  **Create Upgrade Account Use Case**
